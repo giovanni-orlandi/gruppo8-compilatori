@@ -1,4 +1,4 @@
-; ModuleID = 'test/Foo.ll'
+; ModuleID = 'test/Foo.optimized.bc'
 source_filename = "test/Foo.ll"
 
 define dso_local i32 @foo(i32 noundef %0, i32 noundef %1) {
