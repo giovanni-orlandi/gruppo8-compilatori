@@ -1,6 +1,6 @@
 //=============================================================================
 // FILE:
-//    LocalOpts.cpp
+//    AIOpts.cpp
 //
 // DESCRIPTION:
 //    Visits all functions in a module and prints their names. Strictly
@@ -10,7 +10,7 @@
 //
 // USAGE:
 //    New PM
-//      opt -load-pass-plugin=<path-to>libLocalOpts.so -passes="local-opts" `\`
+//      opt -load-pass-plugin=<path-to>libAIOpts.so -passes="ai-opts" `\`
 //        -disable-output <input-llvm-file>
 //
 //
@@ -21,19 +21,19 @@
 #include "llvm/Passes/PassPlugin.h"
 #include "llvm/Support/raw_ostream.h"
 
-#include "LocalOpts_skeleton.cpp"
+#include "AIOpts_skeleton.cpp"
 
 using namespace llvm;
 
 //-----------------------------------------------------------------------------
-// LocalOpts implementation
+// AIOpts implementation
 //-----------------------------------------------------------------------------
 // No need to expose the internals of the pass to the outside world - keep
 // everything in an anonymous namespace.
 namespace {
 
 // New PM implementation
-struct LocalOpts : PassInfoMixin<LocalOpts> {
+struct AIOpts : PassInfoMixin<AIOpts> {
   // Main entry point, takes IR unit to run the pass on (&F) and the
   // corresponding pass manager (to be queried if need be)
   PreservedAnalyses run(Function &F, FunctionAnalysisManager &) {
@@ -53,14 +53,14 @@ struct LocalOpts : PassInfoMixin<LocalOpts> {
 //-----------------------------------------------------------------------------
 // New PM Registration
 //-----------------------------------------------------------------------------
-llvm::PassPluginLibraryInfo getLocalOptsPluginInfo() {
-  return {LLVM_PLUGIN_API_VERSION, "LocalOpts", LLVM_VERSION_STRING,
+llvm::PassPluginLibraryInfo getAIOptsPluginInfo() {
+  return {LLVM_PLUGIN_API_VERSION, "AIOpts", LLVM_VERSION_STRING,
           [](PassBuilder &PB) {
             PB.registerPipelineParsingCallback(
                 [](StringRef Name, FunctionPassManager &FPM,
                    ArrayRef<PassBuilder::PipelineElement>) {
-                  if (Name == "local-opts") {
-                    FPM.addPass(LocalOpts());
+                  if (Name == "ai-opts") {
+                    FPM.addPass(AIOpts());
                     return true;
                   }
                   return false;
@@ -69,9 +69,9 @@ llvm::PassPluginLibraryInfo getLocalOptsPluginInfo() {
 }
 
 // This is the core interface for pass plugins. It guarantees that 'opt' will
-// be able to recognize LocalOpts when added to the pass pipeline on the
-// command line, i.e. via '-passes=local-opts'
+// be able to recognize AIOpts when added to the pass pipeline on the
+// command line, i.e. via '-passes=ai-opts'
 extern "C" LLVM_ATTRIBUTE_WEAK ::llvm::PassPluginLibraryInfo
 llvmGetPassPluginInfo() {
-  return getLocalOptsPluginInfo();
+  return getAIOptsPluginInfo();
 }

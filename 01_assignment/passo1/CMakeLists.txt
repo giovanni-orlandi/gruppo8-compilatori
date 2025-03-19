@@ -33,9 +33,9 @@ endif()
 #===============================================================================
 # 3. ADD THE TARGET
 #===============================================================================
-add_library(LocalOpts SHARED LocalOpts.cpp)
+add_library(AIOpts SHARED AIOpts.cpp)
 
 # Allow undefined symbols in shared objects on Darwin (this is the default
 # behaviour on Linux)
-target_link_libraries(LocalOpts
+target_link_libraries(AIOpts
   "$<$<PLATFORM_ID:Darwin>:-undefined dynamic_lookup>")
