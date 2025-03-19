@@ -85,6 +85,7 @@ struct StrengthReduction : PassInfoMixin<StrengthReduction> {
 struct MultiInstOpt : PassInfoMixin<MultiInstOpt> {
   PreservedAnalyses run(Function &F, FunctionAnalysisManager &) {
     outs() << "MultiInstOpt 3\n";  
+    return PreservedAnalyses::all();
   }
 
   static bool isRequired() { return true; }
