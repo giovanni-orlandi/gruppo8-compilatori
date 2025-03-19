@@ -1,2 +1,5 @@
 # gruppo8-compilatori
-Repository con gli assignments del gruppo 8 (Ballotti Luca, Mancuso Francesco, Orlandi Giovanni)
+Repository con la realizzazione degli assignments del corso di Compilatori (II modulo).
+
+Realizzatori: Ballotti Luca, Mancuso Francesco, Orlandi Giovanni.
+
