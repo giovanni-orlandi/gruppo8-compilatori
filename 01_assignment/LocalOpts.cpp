@@ -7,7 +7,9 @@
 //    Ogni pass effettua un'analisi semplice sulle funzioni di un modulo.
 //
 // USAGE:
-//    opt -load-pass-plugin=<path-to>/libLocalOpts.so -passes="local-opts1,local-opts2,local-opts3" -disable-output <input-llvm-file>
+//    opt -load-pass-plugin=<path-to>/libLocalOpts.so
+//    -passes="local-opts1,local-opts2,local-opts3" -disable-output
+//    <input-llvm-file>
 //
 // License: MIT
 //=============================================================================
@@ -19,63 +21,91 @@
 
 #include "llvm/IR/InstVisitor.h"
 
+#include "StrRed_skeleton.cpp"
 #include "AlgIdRem_skeleton.cpp"
 
 using namespace llvm;
 
 namespace {
 
-  // **Pass 1: Algebraic Identity**
-  struct AlgebraicIdentityRem : public PassInfoMixin<AlgebraicIdentityRem>, public InstVisitor<AlgebraicIdentityRem> {
-    
-    // Flag che usiamo per tenere traccia delle modifiche e per 
-    // fare il return della cosa giusta
-    bool modified = false; 
+// **Pass 1: Algebraic Identity**
+struct AlgebraicIdentityRem : PassInfoMixin<AlgebraicIdentityRem>,
+                              InstVisitor<AlgebraicIdentityRem> {
 
-    void visitAdd(BinaryOperator &I) {
-        outs() << "Visiting Add\n";
-        if (algebric_id_opt(I, 0)) {
-            modified = true;
-        }
+  // Flag che usiamo per tenere traccia delle modifiche e per
+  // fare il return della cosa giusta
+  bool modified = false;
+
+  void visitAdd(BinaryOperator &I) {
+    outs() << "Visiting Add\n";
+    if (algebric_id_opt(I, 0)) {
+      modified = true;
     }
+  }
 
-    void visitMul(BinaryOperator &I) {
-        outs() << "Visiting Mul\n";
-        if (algebric_id_opt(I, 1)) {
-            modified = true;
-        }
+  void visitMul(BinaryOperator &I) {
+    outs() << "Visiting Mul\n";
+    if (algebric_id_opt(I, 1)) {
+      modified = true;
     }
+  }
 
-    void visitSub(BinaryOperator &I) {
-        outs() << "Visiting Sub\n";
-        if (algebric_id_opt(I, 0)) {
-            modified = true;
-        }
+  void visitSub(BinaryOperator &I) {
+    outs() << "Visiting Sub\n";
+    if (algebric_id_opt(I, 0)) {
+      modified = true;
     }
+  }
 
-    void visitSDiv(BinaryOperator &I) {
-        outs() << "Visiting Div\n";
-        if (algebric_id_opt(I, 1)) {
-            modified = true;
-        }
+  void visitSDiv(BinaryOperator &I) {
+    outs() << "Visiting Div\n";
+    if (algebric_id_opt(I, 1)) {
+      modified = true;
     }
+  }
 
-    PreservedAnalyses run(Function &F, FunctionAnalysisManager &) {
-        modified = false; // Reset prima delle visite
-        visit(F);
+  PreservedAnalyses run(Function &F, FunctionAnalysisManager &) {
+    outs() << "1. Algebraic Identity remove\n";
 
-        // Ritorna ...none() se codice IR e' stato modificato, ...all() se codice IR non e' stato modificato
-        return modified ? PreservedAnalyses::none() : PreservedAnalyses::all();
-    }
+    modified = false; // Reset prima delle visite
+    visit(F);
 
-    static bool isRequired() { return true; }
-  };
+    // Ritorna ...none() se codice IR e' stato modificato, ...all() se codice IR
+    // non e' stato modificato
+    return modified ? PreservedAnalyses::none() : PreservedAnalyses::all();
+  }
+
+  static bool isRequired() { return true; }
+};
+
 
 // **Secondo Passo: WIP**
-struct StrengthReduction : PassInfoMixin<StrengthReduction> {
+struct StrengthReduction : PassInfoMixin<StrengthReduction>,
+                           InstVisitor<StrengthReduction> {
+
+  // Flag che usiamo per tenere traccia delle modifiche e per
+  // fare il return della cosa giusta
+  bool modified = false;
+
+  void visitMul(BinaryOperator &I) {
+    if (strenght_reduction_opt(I)) {
+      modified = true;
+    }
+  }
+
+  void visitSDiv(BinaryOperator &I) {
+    if (strenght_reduction_opt(I)) {
+      modified = true;
+    }
+  }
+
   PreservedAnalyses run(Function &F, FunctionAnalysisManager &) {
-    outs() << "StrengthReduction 2\n";  
-    return PreservedAnalyses::all();
+    outs() << "2. StrengthReduction\n";
+
+    modified = false;
+    visit(F);
+
+    return modified ? PreservedAnalyses::none() : PreservedAnalyses::all();
   }
 
   static bool isRequired() { return true; }
@@ -84,7 +114,7 @@ struct StrengthReduction : PassInfoMixin<StrengthReduction> {
 // **Terzo Passo: WIP**
 struct MultiInstOpt : PassInfoMixin<MultiInstOpt> {
   PreservedAnalyses run(Function &F, FunctionAnalysisManager &) {
-    outs() << "MultiInstOpt 3\n";  
+    outs() << "MultiInstOpt 3\n";
     return PreservedAnalyses::all();
   }
 
