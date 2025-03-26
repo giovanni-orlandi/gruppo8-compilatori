@@ -8,12 +8,13 @@ bool isAddOrSub(unsigned op) {
 
 /*  NON IMPLEMENTATO PER NIENTE CON :
 (1.) Mul e SDiv 
-(2.) Istruzione da srotolare con due variabili
-(3.) Sub con costante al primo operando
+(2.) Istruzione da srotolare con due variabili, serve almeno una costante!!!
+(3.) Sub con costante al primo operando e quindi variabile al secondo
 (4.) Istruzione di partenza con due variabili, serve almeno una costante!!!!
 */
 bool match_op(Instruction* I_main, Value* I_full, Instruction* I_srot, bool entrambe = false) {
   unsigned main_opcode = I_main->getOpcode();
+
   // (1.)
   if (!isAddOrSub(main_opcode) || !isAddOrSub(I_srot->getOpcode()))
       return false;
@@ -119,14 +120,13 @@ bool runOnBasicBlock(BasicBlock &B) {
       if (isa<BinaryOperator>(&I)) {
           if (ottimizzazione(I)) {
               Changed = true;
-              // Non stiamo cancellando
           }
       }
   }
   return Changed;
 }
 
-// Funzione principale
+// Impleme
 bool multi_inst_opt(Function &F) {
   bool Transformed = false;
 

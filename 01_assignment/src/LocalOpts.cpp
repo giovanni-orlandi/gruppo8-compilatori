@@ -4,14 +4,11 @@
 //
 // DESCRIPTION:
 //    Plugin LLVM che implementa tre passi di ottimizzazione locali.
-//    Ogni pass effettua un'analisi semplice sulle funzioni di un modulo.
+//    Ogni pass effettua un'ottimizzazione sulle istruzioni.
+// 
+// Si rimanda al README.md della cartella 01_assignment per la descrizione su come usarlo e sui comandi da eseguire.
+// Qui sotto si ha una descrizione dettagliata della "logica algoritmica" con cui abbiamo implementato i tre passi.
 //
-// USAGE:
-//    opt -load-pass-plugin=<path-to>/libLocalOpts.so
-//    -passes="local-opts1,local-opts2,local-opts3" -disable-output
-//    <input-llvm-file>
-//
-// License: MIT
 //=============================================================================
 
 #include "llvm/IR/LegacyPassManager.h"
@@ -29,9 +26,21 @@ using namespace llvm;
 
 namespace {
 
-// **Pass 1: Algebraic Identity**
+/* 
+* Passo 1: Algebraic Identity Remove
+
+  Questo passo, cosi' come il secondo, e' un passo di ottimizzazione che si concentra su singole istruzioni. 
+  Proprio per questo, estendiamo InstVisitor per visitare le istruzioni e applicare le ottimizzazioni, 
+  senza dover implementare noi il codice per iterare su tutti i basic block e le istruzioni.
+  Nel file AlgIdRem.cpp, abbiamo implementato la funzione algebric_id_opt che si occupa di fare l'ottimizzazione e
+  offre un interfaccia che, prendendo in input sia l'istruzione ma anche qual e' l'elemento neutro dell'operazione
+  che stiamo ottimizzando riesce ad essere abbastanza generica.
+
+*/
+
 struct AlgebraicIdentityRem : PassInfoMixin<AlgebraicIdentityRem>,
                               InstVisitor<AlgebraicIdentityRem> {
+
 
   // Flag che usiamo per tenere traccia delle modifiche e per
   // fare il return della cosa giusta
@@ -80,7 +89,7 @@ struct AlgebraicIdentityRem : PassInfoMixin<AlgebraicIdentityRem>,
 };
 
 
-// **Secondo Passo: advanced Strenght Reduction**
+// **Passo 2: advanced Strenght Reduction**
 struct StrengthReduction : PassInfoMixin<StrengthReduction>,
                            InstVisitor<StrengthReduction> {
 
@@ -112,10 +121,10 @@ struct StrengthReduction : PassInfoMixin<StrengthReduction>,
   static bool isRequired() { return true; }
 };
 
-// **Terzo Passo: WIP**
+// **Passo 3: Multi Instruction Optimization**
 struct MultiInstOpt : PassInfoMixin<MultiInstOpt> {
   PreservedAnalyses run(Function &F, FunctionAnalysisManager &) {
-    outs() << "MultiInstOpt 3\n";
+    outs() << "3. MultiInstOpt\n";
 
     multi_inst_opt(F);
 
@@ -125,7 +134,7 @@ struct MultiInstOpt : PassInfoMixin<MultiInstOpt> {
   static bool isRequired() { return true; }
 };
 
-} // namespace
+}
 
 // **Registrazione dei tre passi**
 llvm::PassPluginLibraryInfo getLocalOptsPluginInfo() {
@@ -151,7 +160,7 @@ llvm::PassPluginLibraryInfo getLocalOptsPluginInfo() {
           }};
 }
 
-// **Esportazione del plugin per LLVM**
+// Esportazione del plugin per LLVM
 extern "C" LLVM_ATTRIBUTE_WEAK ::llvm::PassPluginLibraryInfo
 llvmGetPassPluginInfo() {
   return getLocalOptsPluginInfo();
