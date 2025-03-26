@@ -36,7 +36,7 @@ Ogni sottocartella corrisponde a un pass specifico:
 
 Ogni ottimizzazione è invocabile singolarmente.  
 
-**NOTA**: per partire da un file `.c` si rimanda alla sezione *COME GENERARE ESEMPI A PARTIRE DA FILE .c* sul README generale del repository.
+(**NOTA**: per partire da un file `.c` si rimanda alla sezione *COME GENERARE ESEMPI A PARTIRE DA FILE .c* sul README generale del repository)
 
 Una volta che si ha il file (`nome_file.ll`) di partenza su cui applicare l'ottimizzazione desiderata, questi sono i comandi da eseguire.
 
