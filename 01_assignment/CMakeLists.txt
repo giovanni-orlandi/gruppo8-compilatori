@@ -33,7 +33,7 @@ endif()
 #===============================================================================
 # 3. ADD THE TARGET
 #===============================================================================
-add_library(LocalOpts SHARED LocalOpts.cpp)
+add_library(LocalOpts SHARED src/LocalOpts.cpp)
 
 # Allow undefined symbols in shared objects on Darwin (this is the default
 # behaviour on Linux)

@@ -18,8 +18,8 @@
 
 #include "llvm/IR/InstVisitor.h"
 
-#include "StrRed_skeleton.cpp"
-#include "AlgIdRem_skeleton.cpp"
+#include "StrRed.cpp"
+#include "AlgIdRem.cpp"
 #include "MultiInstOpt.cpp"
 
 using namespace llvm;
