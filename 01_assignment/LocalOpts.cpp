@@ -23,6 +23,7 @@
 
 #include "StrRed_skeleton.cpp"
 #include "AlgIdRem_skeleton.cpp"
+#include "MultiInstOpt.cpp"
 
 using namespace llvm;
 
@@ -79,7 +80,7 @@ struct AlgebraicIdentityRem : PassInfoMixin<AlgebraicIdentityRem>,
 };
 
 
-// **Secondo Passo: WIP**
+// **Secondo Passo: advanced Strenght Reduction**
 struct StrengthReduction : PassInfoMixin<StrengthReduction>,
                            InstVisitor<StrengthReduction> {
 
@@ -115,6 +116,9 @@ struct StrengthReduction : PassInfoMixin<StrengthReduction>,
 struct MultiInstOpt : PassInfoMixin<MultiInstOpt> {
   PreservedAnalyses run(Function &F, FunctionAnalysisManager &) {
     outs() << "MultiInstOpt 3\n";
+
+    multi_inst_opt(F);
+
     return PreservedAnalyses::all();
   }
 
