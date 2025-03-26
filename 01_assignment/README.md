@@ -32,7 +32,7 @@ Ogni sottocartella corrisponde a un pass specifico:
 
 ---
 
-### Uso
+### Uso e comandi
 
 Ogni ottimizzazione è invocabile singolarmente.  
 
