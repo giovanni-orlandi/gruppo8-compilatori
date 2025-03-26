@@ -2,16 +2,16 @@
 
 #### Cartella `src/` 
 
-- [`LocalOpts.cpp`](https://github.com/giovanni-orlandi/gruppo8-compilatori/blob/main/01_assignment/LocalOpts.cpp)  
+- [`LocalOpts.cpp`](https://github.com/giovanni-orlandi/gruppo8-compilatori/blob/main/01_assignment/src/LocalOpts.cpp)  
   Plugin LLVM che registra e gestisce tre passi di ottimizzazione locali. Ogni pass effettua una trasformazione semplice sulle funzioni di un modulo LLVM.
 
-- [`AlgIdRem.cpp`](https://github.com/giovanni-orlandi/gruppo8-compilatori/blob/main/01_assignment/AlgIdRem.cpp)  
+- [`AlgIdRem.cpp`](https://github.com/giovanni-orlandi/gruppo8-compilatori/blob/main/01_assignment/src/AlgIdRem.cpp)  
   Implementa il Passo 1: Algebraic Identity Removal, eliminando operazioni banali come `x + 0`, `x * 1`, `x - 0`, ecc.
 
-- [`StrRed.cpp`](https://github.com/giovanni-orlandi/gruppo8-compilatori/blob/main/01_assignment/StrRed.cpp)  
+- [`StrRed.cpp`](https://github.com/giovanni-orlandi/gruppo8-compilatori/blob/main/01_assignment/src/StrRed.cpp)  
   Implementa il Passo 2: Strength Reduction avanzata, trasformando moltiplicazioni e divisioni per potenze di 2 in shift.
 
-- [`MultiInstOpt.cpp`](https://github.com/giovanni-orlandi/gruppo8-compilatori/blob/main/01_assignment/MultiInstOpt.cpp)  
+- [`MultiInstOpt.cpp`](https://github.com/giovanni-orlandi/gruppo8-compilatori/blob/main/01_assignment/src/MultiInstOpt.cpp)  
   Implementa il Passo 3: Multi-Instruction Optimization, semplificando catene di istruzioni aritmetiche ridondanti.
 
 #### Cartella `test/`
