@@ -6,8 +6,10 @@ bool isAddOrSub(unsigned op) {
   return op == Instruction::Add || op == Instruction::Sub;
 }
 
+bool isMulOrSDiv(unsigned op) {
+    return op == Instruction::Mul || op == Instruction::SDiv;
+  }
 /*  NON IMPLEMENTATO PER NIENTE CON :
-(1.) Mul e SDiv 
 (2.) Istruzione da srotolare con due variabili, serve almeno una costante!!!
 (3.) Sub con costante al primo operando e quindi variabile al secondo
 (4.) Istruzione di partenza con due variabili, serve almeno una costante!!!!
@@ -15,8 +17,7 @@ bool isAddOrSub(unsigned op) {
 bool match_op(Instruction* I_main, Value* I_full, Instruction* I_srot, bool entrambe = false) {
   unsigned main_opcode = I_main->getOpcode();
 
-  // (1.)
-  if (!isAddOrSub(main_opcode) || !isAddOrSub(I_srot->getOpcode()))
+  if ((!isAddOrSub(main_opcode) || !isAddOrSub(I_srot->getOpcode())) && (!isMulOrSDiv(main_opcode) || !isMulOrSDiv(I_srot->getOpcode())))
       return false;
 
   Value* I_srot_a = I_srot->getOperand(0);
@@ -26,19 +27,21 @@ bool match_op(Instruction* I_main, Value* I_full, Instruction* I_srot, bool entr
 
 
   Value* base_srot = nullptr;
-  int offset_srot = 0;
+  float offset_srot = 0;
 
   // Costante al secondo operando
   if (ConstantInt* C = dyn_cast<ConstantInt>(I_srot_b)) {
-      offset_srot = C->getSExtValue();
+      offset_srot = static_cast<float>(C->getSExtValue());
       base_srot = I_srot_a;
 
       if (I_srot->getOpcode() == Instruction::Sub)
           offset_srot = -offset_srot;
+     if(I_srot->getOpcode() == Instruction::SDiv)
+          offset_srot = 1.0 / offset_srot;
   }
 
-  // Costante al primo operando (solo per add) (3.)
-  else if (I_srot->getOpcode() == Instruction::Add) {
+  // Costante al primo operando (solo per add  div) (3.)
+  else if (I_srot->getOpcode() == Instruction::Add || I_srot->getOpcode() == Instruction::Mul) {
       if (ConstantInt* C = dyn_cast<ConstantInt>(I_srot_a)) {
           offset_srot = C->getSExtValue();
           base_srot = I_srot_b;
@@ -60,24 +63,27 @@ bool match_op(Instruction* I_main, Value* I_full, Instruction* I_srot, bool entr
       return false;
   }
 
-  int offset_full = C_full->getSExtValue();
+  float offset_full = static_cast<float>(C_full->getSExtValue());
 
   if(main_opcode == Instruction::Sub)
     offset_full = -offset_full;
-    outs() << "Offset srot: " << offset_srot << "\n";
-    outs() << "Offset full: " << offset_full << "\n";
 
-  if (offset_srot + offset_full == 0) {
-      outs() << "Match trovato! Possiamo sostituire con base_srot: " << *base_srot << "\n";
-      I_main->replaceAllUsesWith(base_srot);
-      return true;
-      /* NOTA: 
-      quello che stiamo facendo e'
-      a = b + 1
-      c = a - 1
-      allora sostituiamo tutti i riferimenti a c con riferimenti a b
-      */
-  }
+if(main_opcode == Instruction::SDiv)
+    offset_full = 1.0 / offset_full;
+outs() << "Offset srot: " << offset_srot << "\n";
+outs() << "Offset full: " << offset_full << "\n";
+
+    if (offset_srot + offset_full == 0 || offset_srot * offset_full == 1) {
+        outs() << "Match trovato! Possiamo sostituire con base_srot: " << *base_srot << "\n";
+        I_main->replaceAllUsesWith(base_srot);
+        return true;
+        /* NOTA: 
+        quello che stiamo facendo e'
+        a = b + 1
+        c = a - 1
+        allora sostituiamo tutti i riferimenti a c con riferimenti a b
+        */
+    }
   outs() << "Pattern non compatibile o offset non opposti.\n";
   return false;
 }
