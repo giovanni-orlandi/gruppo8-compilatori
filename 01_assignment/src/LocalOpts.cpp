@@ -126,7 +126,7 @@ struct MultiInstOpt : PassInfoMixin<MultiInstOpt> {
   PreservedAnalyses run(Function &F, FunctionAnalysisManager &) {
     outs() << "3. MultiInstOpt\n";
 
-    multi_inst_opt(F);
+    runOnFunction_MIO(F);
 
     return PreservedAnalyses::all();
   }
