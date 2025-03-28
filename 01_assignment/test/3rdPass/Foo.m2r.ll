@@ -12,7 +12,8 @@ define dso_local noundef i32 @_Z3fooii(i32 noundef %0, i32 noundef %1) #0 {
   %7 = mul nsw i32 %5, 15
   %8 = mul nsw i32 15, %6
   %9 = sdiv i32 15, %7
-  ret i32 %9
+  %10 = sdiv i32 %7, 15
+  ret i32 %10
 }
 
 attributes #0 = { mustprogress noinline nounwind uwtable "frame-pointer"="all" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cmov,+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }

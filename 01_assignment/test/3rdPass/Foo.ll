@@ -14,31 +14,35 @@ define dso_local noundef i32 @_Z3fooii(i32 noundef %0, i32 noundef %1) #0 {
   %9 = alloca i32, align 4
   %10 = alloca i32, align 4
   %11 = alloca i32, align 4
+  %12 = alloca i32, align 4
   store i32 %0, ptr %3, align 4
   store i32 %1, ptr %4, align 4
-  %12 = load i32, ptr %3, align 4
-  %13 = sub nsw i32 %12, 16
-  store i32 %13, ptr %5, align 4
-  %14 = load i32, ptr %4, align 4
-  %15 = mul nsw i32 16, %14
-  store i32 %15, ptr %6, align 4
-  %16 = load i32, ptr %5, align 4
-  %17 = add nsw i32 %16, 16
-  store i32 %17, ptr %7, align 4
-  %18 = load i32, ptr %6, align 4
-  %19 = sdiv i32 %18, 16
-  store i32 %19, ptr %8, align 4
-  %20 = load i32, ptr %7, align 4
-  %21 = mul nsw i32 %20, 15
-  store i32 %21, ptr %9, align 4
-  %22 = load i32, ptr %8, align 4
-  %23 = mul nsw i32 15, %22
-  store i32 %23, ptr %10, align 4
-  %24 = load i32, ptr %9, align 4
-  %25 = sdiv i32 15, %24
-  store i32 %25, ptr %11, align 4
-  %26 = load i32, ptr %11, align 4
-  ret i32 %26
+  %13 = load i32, ptr %3, align 4
+  %14 = sub nsw i32 %13, 16
+  store i32 %14, ptr %5, align 4
+  %15 = load i32, ptr %4, align 4
+  %16 = mul nsw i32 16, %15
+  store i32 %16, ptr %6, align 4
+  %17 = load i32, ptr %5, align 4
+  %18 = add nsw i32 %17, 16
+  store i32 %18, ptr %7, align 4
+  %19 = load i32, ptr %6, align 4
+  %20 = sdiv i32 %19, 16
+  store i32 %20, ptr %8, align 4
+  %21 = load i32, ptr %7, align 4
+  %22 = mul nsw i32 %21, 15
+  store i32 %22, ptr %9, align 4
+  %23 = load i32, ptr %8, align 4
+  %24 = mul nsw i32 15, %23
+  store i32 %24, ptr %10, align 4
+  %25 = load i32, ptr %9, align 4
+  %26 = sdiv i32 15, %25
+  store i32 %26, ptr %11, align 4
+  %27 = load i32, ptr %9, align 4
+  %28 = sdiv i32 %27, 15
+  store i32 %28, ptr %12, align 4
+  %29 = load i32, ptr %12, align 4
+  ret i32 %29
 }
 
 attributes #0 = { mustprogress noinline nounwind uwtable "frame-pointer"="all" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cmov,+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }

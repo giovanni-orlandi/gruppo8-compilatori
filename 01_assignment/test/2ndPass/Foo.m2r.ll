@@ -12,12 +12,12 @@ define dso_local noundef i32 @_Z3fooii(i32 noundef %0, i32 noundef %1) #0 {
   %7 = mul nsw i32 %5, 15
   %8 = mul nsw i32 15, %6
   %9 = sdiv i32 %8, 16
-  %10 = mul nsw i32 %3, 44
-  %11 = sdiv i32 16, %7
-  %12 = sdiv i32 %9, 17
-  %13 = sdiv i32 %12, 15
-  %14 = mul nsw i32 -16, %0
-  %15 = sdiv i32 %0, -16
+  %10 = mul nsw i32 -16, %0
+  %11 = sdiv i32 %0, -16
+  %12 = mul nsw i32 %3, 44
+  %13 = sdiv i32 16, %7
+  %14 = sdiv i32 %9, 17
+  %15 = sdiv i32 %14, 15
   ret i32 %11
 }
 

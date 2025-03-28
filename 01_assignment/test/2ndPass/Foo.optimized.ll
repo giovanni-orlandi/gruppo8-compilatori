@@ -16,13 +16,15 @@ define dso_local noundef i32 @_Z3fooii(i32 noundef %0, i32 noundef %1) #0 {
   %11 = shl i32 %8, 4
   %12 = sub i32 %11, %8
   %13 = ashr i32 %12, 4
-  %14 = mul nsw i32 %3, 44
-  %15 = sdiv i32 16, %10
-  %16 = sdiv i32 %13, 17
-  %17 = sdiv i32 %16, 15
-  %18 = mul nsw i32 -16, %0
-  %19 = sdiv i32 %0, -16
-  ret i32 %15
+  %14 = shl i32 %0, 4
+  %15 = sub i32 0, %14
+  %16 = ashr i32 %0, 4
+  %17 = sub i32 0, %16
+  %18 = mul nsw i32 %3, 44
+  %19 = sdiv i32 16, %10
+  %20 = sdiv i32 %13, 17
+  %21 = sdiv i32 %20, 15
+  ret i32 %17
 }
 
 attributes #0 = { mustprogress noinline nounwind uwtable "frame-pointer"="all" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cmov,+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }

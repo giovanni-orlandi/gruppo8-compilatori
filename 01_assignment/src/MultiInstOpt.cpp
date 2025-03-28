@@ -157,7 +157,7 @@ bool multi_inst_opt(Instruction& I) {
         if (match_op(&I, op2, Iop1)) return true;
     }
 
-    if (Iop2) {
+    if (Iop2 && I.getOpcode() != Instruction::SDiv) {
         outs() << "Srotolo seconda\n";
         if (match_op(&I, op1, Iop2)) return true;
     }

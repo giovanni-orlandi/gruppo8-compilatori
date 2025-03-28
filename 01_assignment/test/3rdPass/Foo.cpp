@@ -19,7 +19,8 @@ int foo(int a, int b) {
     int temp6 = 15 * temp4;
 
     //Caso problematico.
-    int temp8 = 15 / temp5; // sbagliato --> 15 / (15 * a) = 1/a != a 
+    int temp7 = 15 / temp5; // sbagliato --> 15 / (15 * a) = 1/a != a 
+    int temp8 = temp5 / 15; // corretto --> (15 * a) / 15 = a
 
     return temp8;
 }

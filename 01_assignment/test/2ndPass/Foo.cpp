@@ -23,6 +23,10 @@ int foo(int a, int b) {
     // Divisione con potenza di 2 (16)
     int div1 = mul6 / 16;
 
+    // Costante potenza di due ma negativa
+    int mul8 = -16 * a;
+    int div5 = a/-16;
+    
     // I seguenti casi non vengono ottimizzati, ma sono qui per completezza
    
     // Moltiplicazione per numero non ottimizzabile
@@ -37,9 +41,5 @@ int foo(int a, int b) {
     // Dicisione con potenza di 2 - 1 (15)
     int div4 = div3 / 15;
 
-    // Costante potenza di due ma negativa
-    int mul8 = -16 * a;
-    int div5 = a/-16;
-
-    return div2;
+    return div5;
 }

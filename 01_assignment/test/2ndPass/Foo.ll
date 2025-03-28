@@ -43,23 +43,23 @@ define dso_local noundef i32 @_Z3fooii(i32 noundef %0, i32 noundef %1) #0 {
   %30 = load i32, ptr %10, align 4
   %31 = sdiv i32 %30, 16
   store i32 %31, ptr %11, align 4
-  %32 = load i32, ptr %5, align 4
-  %33 = mul nsw i32 %32, 44
+  %32 = load i32, ptr %3, align 4
+  %33 = mul nsw i32 -16, %32
   store i32 %33, ptr %12, align 4
-  %34 = load i32, ptr %9, align 4
-  %35 = sdiv i32 16, %34
+  %34 = load i32, ptr %3, align 4
+  %35 = sdiv i32 %34, -16
   store i32 %35, ptr %13, align 4
-  %36 = load i32, ptr %11, align 4
-  %37 = sdiv i32 %36, 17
+  %36 = load i32, ptr %5, align 4
+  %37 = mul nsw i32 %36, 44
   store i32 %37, ptr %14, align 4
-  %38 = load i32, ptr %14, align 4
-  %39 = sdiv i32 %38, 15
+  %38 = load i32, ptr %9, align 4
+  %39 = sdiv i32 16, %38
   store i32 %39, ptr %15, align 4
-  %40 = load i32, ptr %3, align 4
-  %41 = mul nsw i32 -16, %40
+  %40 = load i32, ptr %11, align 4
+  %41 = sdiv i32 %40, 17
   store i32 %41, ptr %16, align 4
-  %42 = load i32, ptr %3, align 4
-  %43 = sdiv i32 %42, -16
+  %42 = load i32, ptr %16, align 4
+  %43 = sdiv i32 %42, 15
   store i32 %43, ptr %17, align 4
   %44 = load i32, ptr %13, align 4
   ret i32 %44

@@ -11,22 +11,18 @@ int foo(int a, int b) {
     // Somma con elemento neutro (0)
     int sum1 = 0 + b;    // = b
     int sum2 = a + 0;    // = a
-    int sum3 = 0 + 0;    // = 0
 
     // Moltiplicazione con elemento neutro (1)
     int mul1 = 1 * sum2; // = sum2
     int mul2 = sum1 * 1; // = sum1
-    int mul3 = 1 * 1;    // = 1
 
     // Sottrazione con elemento neutro (0)
     int sub1 = 0 - mul2;
     int sub2 = mul1 - 0; // = mul1
-    int sub3 = 0 - 0;    // = 0
 
     // Divisione con elemento neutro (1)
     int div1 = 1 / sub2;  // 1 diviso qualcosa (attenzione a divisione per 0!)
     int div2 = sub1 / 1;  // qualcosa diviso 1 = se stesso
-    int div3 = 1 / 1;     // = 1
 
     return div3;
 }
