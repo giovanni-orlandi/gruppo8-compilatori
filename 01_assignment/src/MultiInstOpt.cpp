@@ -15,7 +15,7 @@ bool isMulOrSDiv(unsigned op) {
     Es: a = b + 2 e c = a + 1
     stiamo lavorando su c (I_main), srotolando a (I_srot), verificando che 1 e 2 siano effettivamente costanti.
     Se tutti i controlli vanno a buon fine, allora valutiamo una possibile sostituzione.
-    Per permettere una valutazion finale semplice scegliamo di lavorare con gli offset, che sono le costanti. 
+    Per permettere una valutazione finale semplice scegliamo di lavorare con gli offset, che sono le costanti. 
     In particolare lavoriamo a coppie, valutando le seguenti casistiche: 
     - I_main add e I_srot add 
     - I_main add e I_srot sub

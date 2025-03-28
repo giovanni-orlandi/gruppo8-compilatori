@@ -51,6 +51,7 @@ struct AlgebraicIdentityRem : PassInfoMixin<AlgebraicIdentityRem>,
     if (algebric_id_opt(I, 0)) {
       modified = true;
     }
+    outs() << "\n";
   }
 
   void visitMul(BinaryOperator &I) {
@@ -58,6 +59,8 @@ struct AlgebraicIdentityRem : PassInfoMixin<AlgebraicIdentityRem>,
     if (algebric_id_opt(I, 1)) {
       modified = true;
     }
+    outs() << "\n";
+
   }
 
   void visitSub(BinaryOperator &I) {
@@ -65,6 +68,8 @@ struct AlgebraicIdentityRem : PassInfoMixin<AlgebraicIdentityRem>,
     if (algebric_id_opt(I, 0)) {
       modified = true;
     }
+    outs() << "\n";
+
   }
 
   void visitSDiv(BinaryOperator &I) {
@@ -72,6 +77,8 @@ struct AlgebraicIdentityRem : PassInfoMixin<AlgebraicIdentityRem>,
     if (algebric_id_opt(I, 1)) {
       modified = true;
     }
+    outs() << "\n";
+
   }
 
   PreservedAnalyses run(Function &F, FunctionAnalysisManager &) {
@@ -98,15 +105,19 @@ struct StrengthReduction : PassInfoMixin<StrengthReduction>,
   bool modified = false;
 
   void visitMul(BinaryOperator &I) {
+    outs() << "Visiting Mul\n";
     if (strenght_reduction_opt(I)) {
       modified = true;
     }
+    outs() << "\n";
   }
 
   void visitSDiv(BinaryOperator &I) {
+    outs() << "Visiting Div\n";
     if (strenght_reduction_opt(I)) {
       modified = true;
     }
+    outs() << "\n";
   }
 
   PreservedAnalyses run(Function &F, FunctionAnalysisManager &) {

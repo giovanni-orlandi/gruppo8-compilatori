@@ -27,9 +27,10 @@ bool algebric_id_opt(Instruction &I, int neu_el) {
     if (ConstantInt *C1 = dyn_cast<ConstantInt>(op1)) {
         if ((opcode == Instruction::Add || opcode == Instruction::Mul) &&
             C1->getZExtValue() == neu_el) {
+            outs() << "Istruzione eliminata (commutativa, nullo a sinistra):\n";
+            outs() << I << " => sostituito da => " << *op2 << "\n\n";
             I.replaceAllUsesWith(op2);
             I.eraseFromParent();
-            outs() << "Istruzione eliminata (commutativa, costante a sinistra)\n";
             return true;
         }
     }
@@ -38,9 +39,12 @@ bool algebric_id_opt(Instruction &I, int neu_el) {
     // Se l'elemento neutro è a destra, possiamo sostituire l'istruzione con il primo operando (in tutte le operazioni)
     if (ConstantInt *C2 = dyn_cast<ConstantInt>(op2)) {
         if (C2->getZExtValue() == neu_el) {
+            outs() << "Istruzione eliminata (nullo a destra)\n";
+            outs() << I << " => sostituito da => " << *op1 << "\n";
             I.replaceAllUsesWith(op1);
             I.eraseFromParent();
-            outs() << "Istruzione eliminata (costante a destra)\n";
+            
+
             return true;
         }
     }

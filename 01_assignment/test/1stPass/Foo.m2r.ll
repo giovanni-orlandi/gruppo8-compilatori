@@ -1,12 +1,18 @@
-; ModuleID = 'test/1stPass/Foo.m2r.ll'
+; ModuleID = 'test/1stPass/Foo.ll'
 source_filename = "test/1stPass/Foo.cpp"
 target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-pc-linux-gnu"
 
 ; Function Attrs: mustprogress noinline nounwind uwtable
 define dso_local noundef i32 @_Z3fooii(i32 noundef %0, i32 noundef %1) #0 {
-  %3 = sub nsw i32 0, %1
-  %4 = sdiv i32 1, %0
+  %3 = add nsw i32 0, %1
+  %4 = add nsw i32 %0, 0
+  %5 = mul nsw i32 1, %4
+  %6 = mul nsw i32 %3, 1
+  %7 = sub nsw i32 0, %6
+  %8 = sub nsw i32 %5, 0
+  %9 = sdiv i32 1, %8
+  %10 = sdiv i32 %7, 1
   ret i32 1
 }
 

@@ -28,10 +28,11 @@ bool strenght_reduction_opt(Instruction &I) {
                 }
 
                 if (NewInst) {
+                    outs() << "Strength reduction applicata (potenza esatta 2): " << val << "\n";
+                    outs() << I << " => sostituito da => " << *NewInst << "\n";
                     NewInst->insertAfter(&I);
                     I.replaceAllUsesWith(NewInst);
                     I.eraseFromParent();
-                    outs() << "Strength reduction applicata (potenza esatta 2): " << val << "\n";
                     return true;
                 }
             }
@@ -44,9 +45,10 @@ bool strenght_reduction_opt(Instruction &I) {
                     Shift->insertAfter(&I);
                     Instruction *Add = BinaryOperator::Create(Instruction::Add, Shift, nonConstOp);
                     Add->insertAfter(Shift);
+                    outs() << "Strength reduction applicata (2^n + 1): " << val << "\n";
+                    outs() << I << " => sostituito da => " << *Shift << " AND " << *Add  << "\n";
                     I.replaceAllUsesWith(Add);
                     I.eraseFromParent();
-                    outs() << "Strength reduction applicata (2^n + 1): " << val << "\n";
                     return true;
                 }
             }
@@ -59,9 +61,10 @@ bool strenght_reduction_opt(Instruction &I) {
                     Shift->insertAfter(&I);
                     Instruction *Sub = BinaryOperator::Create(Instruction::Sub, Shift, nonConstOp);
                     Sub->insertAfter(Shift);
+                    outs() << "Strength reduction applicata (2^n - 1): " << val << "\n";
+                    outs() << I << " => sostituito da => " << *Shift << " AND " << *Sub  << "\n";
                     I.replaceAllUsesWith(Sub);
                     I.eraseFromParent();
-                    outs() << "Strength reduction applicata (2^n - 1): " << val << "\n";
                     return true;
                 }
             }
