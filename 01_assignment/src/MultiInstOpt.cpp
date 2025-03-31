@@ -162,12 +162,6 @@ bool multi_inst_opt(Instruction& I) {
         if (match_op(&I, op1, Iop2)) return true;
     }
 
-    // if (Iop1 && Iop2) {
-    //     outs() << "Srotolo entrambe\n";
-    //     if (match_op(I.getOpcode(), Iop1, Iop2, true))
-    //         return true;
-    // }
-
     return false;
 }
 
