@@ -7,18 +7,16 @@ Repository con la realizzazione degli assignments del corso di **Compilatori (II
 
 **COME GENERARE ESEMPI A PARTIRE DA FILE .c**
 
-Da file .c a file .ll
+Da file .cpp a .ll
 ```bash
-clang -Xclang -disable-O0-optnone -S -emit-llvm -O0 nome_file.c -o nome_file.ll
+clang++ -Xclang -disable-O0-optnone -O0 -S -emit-llvm file_test.cpp -o file_test.ll
 ```
+
 Rimuovere istruzioni load e store
 ```bash
-opt -p mem2reg nome_file.ll -o nome_file.bc
+opt -S -p file_test.ll -o file_test.m2r.ll
 ```
-Ritornare da binario a .ll
-```
-llvm-dis nome_file.bc -o nome_file.ll
-```
+
 ---
 
 ## Cartella: `01_assignment`
