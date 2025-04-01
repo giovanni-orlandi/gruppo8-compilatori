@@ -3,8 +3,6 @@
     clang++ -Xclang -disable-O0-optnone -O0 -S -emit-llvm test/3rdPass/Foo.cpp -o test/3rdPass/Foo.ll && \
     opt -S -p mem2reg test/3rdPass/Foo.ll -o test/3rdPass/Foo.m2r.ll && \
     opt -load-pass-plugin ./build/libLocalOpts.so -passes=multi-inst  test/3rdPass/Foo.m2r.ll -S -o test/3rdPass/Foo.optimized.ll
-
-    Questa combo di comandi fa costant folding automaticamente --> risolvere.
 */
 
 int foo(int a, int b) {

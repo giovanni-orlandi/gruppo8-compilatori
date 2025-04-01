@@ -4,16 +4,22 @@ target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:
 target triple = "x86_64-pc-linux-gnu"
 
 ; Function Attrs: mustprogress noinline nounwind uwtable
+define dso_local noundef i32 @_Z1gi(i32 noundef %0) #0 {
+  %2 = sub nsw i32 0, %0
+  %3 = sub nsw i32 %0, 0
+  ret i32 %3
+}
+
+; Function Attrs: mustprogress noinline nounwind uwtable
 define dso_local noundef i32 @_Z3fooii(i32 noundef %0, i32 noundef %1) #0 {
   %3 = add nsw i32 0, %1
   %4 = add nsw i32 %0, 0
   %5 = mul nsw i32 1, %4
   %6 = mul nsw i32 %3, 1
-  %7 = sub nsw i32 0, %6
-  %8 = sub nsw i32 %5, 0
-  %9 = sdiv i32 1, %8
-  %10 = sdiv i32 %7, 1
-  ret i32 1
+  %7 = call noundef i32 @_Z1gi(i32 noundef %6)
+  %8 = sdiv i32 1, %7
+  %9 = sdiv i32 %7, 1
+  ret i32 %9
 }
 
 attributes #0 = { mustprogress noinline nounwind uwtable "frame-pointer"="all" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cmov,+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }

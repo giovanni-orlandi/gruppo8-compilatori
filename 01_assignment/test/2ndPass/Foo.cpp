@@ -4,7 +4,6 @@
     opt -S -p mem2reg test/2ndPass/Foo.ll -o test/2ndPass/Foo.m2r.ll && \
     opt -load-pass-plugin ./build/libLocalOpts.so -passes=str-red  test/2ndPass/Foo.m2r.ll -S -o test/2ndPass/Foo.optimized.ll
 
-    Questa combo di comandi fa costant folding automaticamente --> risolvere.
 */
 
 int foo(int a, int b) {
