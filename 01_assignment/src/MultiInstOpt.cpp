@@ -121,6 +121,7 @@ bool match_op(Instruction* I_main, Value* op_full, Instruction* I_srot) {
         outs() << "Match trovato! Possiamo sostituire con base_srot: "
                << *base_srot << "\n";
         I_main->replaceAllUsesWith(base_srot);
+        I_main->eraseFromParent();
         return true;
         /* NOTA:
         quello che stiamo facendo e'

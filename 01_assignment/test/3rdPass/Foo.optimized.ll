@@ -7,12 +7,9 @@ target triple = "x86_64-pc-linux-gnu"
 define dso_local noundef i32 @_Z3fooii(i32 noundef %0, i32 noundef %1) #0 {
   %3 = sub nsw i32 %0, 16
   %4 = mul nsw i32 16, %1
-  %5 = add nsw i32 %3, 16
-  %6 = sdiv i32 %4, 16
-  %7 = mul nsw i32 %0, 15
-  %8 = mul nsw i32 15, %1
-  %9 = sdiv i32 15, %7
-  %10 = sdiv i32 %7, 15
+  %5 = mul nsw i32 %0, 15
+  %6 = mul nsw i32 15, %1
+  %7 = sdiv i32 15, %5
   ret i32 %0
 }
 
