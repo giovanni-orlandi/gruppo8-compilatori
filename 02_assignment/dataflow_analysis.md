@@ -25,7 +25,7 @@ L'obiettivo principale dell'assegnamento era progettare e implementare un'analis
 | **Transfer function**    | $in[b] = gen[b] \cup \left( out[b] - kill[b] \right)$ |
 | **Meet Operation (∧)**   | $\cap$             |
 | **Boundary Condition**   | $out[\text{exit}] = \emptyset$ |
-| **Initial interior points** | $in[b] = \cup(\text{Universal set})$ |
+| **Initial interior points** | $in[b] = \text{Universal set}$ |
 
 
 ---
