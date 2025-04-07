@@ -20,12 +20,12 @@ L'obiettivo principale dell'assegnamento era progettare e implementare un'analis
 
 |                          | Very busy expression |
 |--------------------------|--------------------|
-| **Domain**               | ?                  |
-| **Direction**            | ?                  |
-| **Transfer function**    | ?                  |
-| **Meet Operation (∧)**   | ?                  |
-| **Boundary Condition**   | ?                  |
-| **Initial interior points** | ?               |
+| **Domain**               | $\text{Sets of expressions}$  |
+| **Direction**            | $\text{Backword}$  |
+| **Transfer function**    | $in[b] = gen[b] \cup \left( out[b] - kill[b] \right)$ |
+| **Meet Operation (∧)**   | $\cap$             |
+| **Boundary Condition**   | $out[\text{exit}] = \emptyset$ |
+| **Initial interior points** | $in[b] = \cup(\text{Universal set})$ |
 
 
 ---
@@ -34,12 +34,12 @@ L'obiettivo principale dell'assegnamento era progettare e implementare un'analis
 
 |                          | Dominator Analysis |
 |--------------------------|--------------------|
-| **Domain**               | ?                  |
-| **Direction**            | ?                  |
-| **Transfer function**    | ?                  |
-| **Meet Operation (∧)**   | ?                  |
-| **Boundary Condition**   | ?                  |
-| **Initial interior points** | ?               |
+| **Domain**               | $\text{Sets of BB}$ |
+| **Direction**            | $\text{Forward}$ |
+| **Transfer function**    | $out[b] = B \cup in[b]$ |
+| **Meet Operation (∧)**   | $\cap$ |
+| **Boundary Condition**   | $out[\text{Entry}] = \text{Entry}$ |
+| **Initial interior points** | $out[b] = \text{Universal set}$ |
 
 
 ---
@@ -48,9 +48,9 @@ L'obiettivo principale dell'assegnamento era progettare e implementare un'analis
    
 |                          | Constant propagation |
 |--------------------------|--------------------|
-| **Domain**               | ?                  |
-| **Direction**            | ?                  |
-| **Transfer function**    | ?                  |
-| **Meet Operation (∧)**   | ?                  |
-| **Boundary Condition**   | ?                  |
-| **Initial interior points** | ?               |
+| **Domain**               | $\text{(var, valore)}$ |
+| **Direction**            | $\text{Forward}$ |
+| **Transfer function**    | $out[b] = gen[b] \cup \left( in[b] - kill[b] \right)$ |            
+| **Meet Operation (∧)**   | $\cap$ |
+| **Boundary Condition**   | $out[\text{Entry}] = \emptyset$ |
+| **Initial interior points** | $out[b] = \text{Universal set}$ |
