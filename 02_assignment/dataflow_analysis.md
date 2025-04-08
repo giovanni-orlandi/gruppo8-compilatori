@@ -29,7 +29,7 @@ Serve ad ottimizzare via **code hoisting**, ovvero anticipare il calcolo di espr
 | **Direction**            | $\text{Backword}$  |
 | **Transfer function**    | $in[b] = Gen_b \cup \left( out[b] - Kill_b \right)$ |
 | **Meet Operation (∧)**   | $\cap$             |
-| **Boundary Condition**   | $out[\text{exit}] = \emptyset$ |
+| **Boundary Condition**   | $out[\text{Exit}] = \emptyset$ |
 | **Initial interior points** | $in[b] = \text{Universal set}$ |
 
 
@@ -57,7 +57,7 @@ Esempio:
 |--------------------------|--------------------|
 | **Domain**               | $\text{Sets of BB}$ |
 | **Direction**            | $\text{Forward}$ |
-| **Transfer function**    | $out[b] = B \cup in[b]$ |
+| **Transfer function**    | $out[b] = b \cup in[b]$ |
 | **Meet Operation (∧)**   | $\cap$ |
 | **Boundary Condition**   | $out[\text{Entry}] = \text{Entry}$ |
 | **Initial interior points** | $out[b] = \text{Universal set}$ |
@@ -71,7 +71,7 @@ Esempio:
 |--------------------------|--------------------|
 | **Domain**               | $\text{(var, valore)}$ |
 | **Direction**            | $\text{Forward}$ |
-| **Transfer function**    | $out[b] = gen[b] \cup \left( in[b] - kill[b] \right)$ |            
+| **Transfer function**    | $out[b] = Gen_b \cup \left( in[b] - Kill_b \right)$ |            
 | **Meet Operation (∧)**   | $\cap$ |
 | **Boundary Condition**   | $out[\text{Entry}] = \emptyset$ |
 | **Initial interior points** | $out[b] = \text{Universal set}$ |
