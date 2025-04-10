@@ -27,7 +27,9 @@ Serve ad ottimizzare via **code hoisting**, ovvero anticipare il calcolo di espr
 |--------------------------|--------------------|
 | **Domain**               | $\text{Sets of expressions}$  |
 | **Direction**            | $\text{Backword}$  |
-| **Transfer function**    | $in[b] = Gen_b \cup \left( out[b] - Kill_b \right)$ |
+| **Transfer function**    | $f_b(x) = Gen_b \cup \left( x - Kill_b \right)$ |
+| **in[b]** |  $f_b(out[b]) $ |
+|  **out[b]** |   ^ $in[succ(b)]$  |
 | **Meet Operation (∧)**   | $\cap$             |
 | **Boundary Condition**   | $in[\text{Exit}] = \emptyset$ |
 | **Initial interior points** | $in[b] = \text{Universal set}$ |
@@ -70,7 +72,9 @@ L'implementazione, pur essendo realizzabile nuovamente tramite bit-vector, è st
 |--------------------------|--------------------|
 | **Domain**               | $\text{Sets of BB}$ |
 | **Direction**            | $\text{Forward}$ |
-| **Transfer function**    | $out[b] = b \cup in[b]$ |
+| **Transfer function**    | $f_b(x) = b \cup x$ |
+| **in[b]** |  ^ $out[pred(b)]$   |
+|  **out[b]** |  $f_b(in[b]) $ |
 | **Meet Operation (∧)**   | $\cap$ |
 | **Boundary Condition**   | $out[\text{Entry}] = \text{Entry}$ |
 | **Initial interior points** | $out[b] = \text{Universal set}$ |
@@ -104,7 +108,9 @@ Questo spiega anche la scelta dell'**universal set** come initial interior point
 |--------------------------|--------------------|
 | **Domain**               | $\text{(var, valore)}$ |
 | **Direction**            | $\text{Forward}$ |
-| **Transfer function**    | $out[b] = Gen_b \cup \left( in[b] - Kill_b \right)$ |            
+| **Transfer function**    | $f_b(x) = Gen_b \cup \left( x - Kill_b \right)$ |  
+| **in[b]** |  ^ $out[pred(b)]$   |
+|  **out[b]** |  $f_b(in[b]) $ |
 | **Meet Operation (∧)**   | $\cap$ |
 | **Boundary Condition**   | $out[\text{Entry}] = \emptyset$ |
 | **Initial interior points** | $out[b] = \text{Universal set}$ |
