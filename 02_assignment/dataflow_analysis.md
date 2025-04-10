@@ -37,7 +37,7 @@ Serve ad ottimizzare via **code hoisting**, ovvero anticipare il calcolo di espr
 
 dove:
 - $Gen_b$: espressioni generate da istruzioni nel basic block. Es: `a = x + y` genera `x + y` 
-- $Kill_b$: ogni espressione di assegnamento killa l'espressione in cui la variabile riassegnata e' un operando 
+- $Kill_b$: ogni espressione di assegnamento killa le espressioni in cui la variabile riassegnata e' un operando 
 
 L'implementazione e' stata pensata con un bit vector per ogni basic block. La lunghezza di ogni bit vector e' pari al numero di espressioni presenti nel CFG.  
 In questo caso specifico il bit vector sara' lungo 2:
@@ -48,7 +48,31 @@ Esempio:
 - `[1, 0]` vuol dire che `b-a` è busy, `a-b` no.
 
 
+### Tabella di Generazione/Kill
 
+|      | Gen   | Kill     |
+|------|-------|----------|
+| BB1  | ∅     | ∅        |
+| BB2  | ∅     | ∅        |
+| BB3  | e1    | ∅        |
+| BB4  | e2    | ∅        |
+| BB5  | e1    | ∅        |
+| BB6  | ∅     | e1,e2    |
+| BB7  | e2    | ∅        |
+| BB8  | ∅     | ∅        |
+
+### Tabella dei Bit Vector
+
+|             | In[b] | Out[b] |
+|-------------|-------|--------|
+| BB1 (Entry) | /     | 1 0    |
+| BB2         | 1 0   | 1 0    |
+| BB3         | 1 1   | 0 1    |
+| BB4         | 0 1   | ∅      |
+| BB5         | 1 0   | 0 0    |
+| BB6         | 0 0   | 0 1    |
+| BB7         | 0 1   | ∅      |
+| BB8 (Exit)  | ∅     | /      |
 
 
 ---
@@ -114,3 +138,49 @@ Questo spiega anche la scelta dell'**universal set** come initial interior point
 | **Meet Operation (∧)**   | $\cap$ |
 | **Boundary Condition**   | $out[\text{Entry}] = \emptyset$ |
 | **Initial interior points** | $out[b] = \text{Universal set}$ |
+
+### Tabella di Gen/Kill
+
+> **Nota:** con `c` si intende un **valore costante generico**.
+
+| BB   | Gen       | Kill   |
+|------|-----------|--------|
+| BB1  | ∅         | ∅      |
+| BB2  | <k,2>     | <k,c>  |
+| BB3  | ∅         | ∅      |
+| BB4  | <a,k+2>   | <a,c>  |
+| BB5  | <x,5>     | <x,c>  |
+| BB6  | <a,k*2>   | <a,c>  |
+| BB7  | <k,8>     | <x,c>  |
+| BB8  | <k,a>     | <k,c>  |
+| BB9  | ∅         | ∅      |
+| BB10 | <b,2>     | <b,c>  |
+| BB11 | <x,a+k>   | <x,c>  |
+| BB12 | <y,a*b>   | <y,c>  |
+| BB13 | <k,k+1>   | <k,c>  |
+| BB14 | ∅         | ∅      |
+| BB15 | ∅         | ∅      |
+
+### Iterazioni In/Out
+
+| BB   | In (1st Iter.)                   | Out (1st Iter.)                    | In (2nd Iter.)                         | Out (2nd Iter.)                       |
+|------|----------------------------------|------------------------------------|----------------------------------------|----------------------------------------|
+| BB1  | /                                | ∅                                  | /                                      | ∅                                      |
+| BB2  | ∅                                | {<k,2>}                            | ∅                                      | {<k,2>}                                |
+| BB3  | {<k,2>}                          | {<k,2>}                            | {<k,2>}                                | {<k,2>}                                |
+| BB4  | {<k,2>}                          | {<k,2>, <a,4>}                    | {<k,2>}                                | {<k,2>, <a,4>}                         |
+| BB5  | {<k,2>, <a,4>}                  | {<k,2>, <a,4>, <x,5>}             | {<k,2>, <a,4>}                          | {<k,2>, <a,4>, <x,5>}                  |
+| BB6  | {<k,2>, <a,4>}                  | {<k,2>, <a,4>}                    | {<k,2>, <a,4>}                          | {<k,2>, <a,4>}                         |
+| BB7  | {<k,2>, <a,4>}                  | {<k,2>, <a,4>, <x,8>}             | {<k,2>, <a,4>}                          | {<k,2>, <a,4>, <x,8>}                  |
+| BB8  | {<k,2>, <a,4>}                  | {<k,4>, <a,4>}                    | {<k,2>, <a,4>}                          | {<k,4>, <a,4>}                         |
+| BB9  | {<k,4>, <a,4>}                  | {<k,4>, <a,4>}                    | {<k,4>, <a,4>}                          | {<k,4>, <a,4>}                         |
+| BB10 | {<k,4>, <a,4>}                  | {<k,4>, <a,4>, <b,2>}             | {<k,4>, <a,4>}                          | {<k,4>, <a,4>, <b,2>}                  |
+| BB11 | {<k,4>, <a,4>, <b,2>}           | {<k,4>, <a,4>, <b,2>, <x,8>}      | {<a,4>, <b,2>}                          | {<k,4>, <a,4>, <b,2>, <x,8>}           |
+| BB12 | {<k,4>, <a,4>, <b,2>, <x,8>}    | {<k,4>, <a,4>, <b,2>, <x,8>, <y,8>}| {<k,4>, <a,4>, <b,2>, <x,8>}           | {<k,4>, <a,4>, <b,2>, <x,8>, <y,8>}    |
+| BB13 | {<k,4>, <a,4>, <b,2>, <x,8>, <y,8>}| {<k,5>, <a,4>, <b,2>, <x,8>, <y,8>}| {<k,4>, <a,4>, <b,2>, <x,8>, <y,8>}   | {<k,5>, <a,4>, <b,2>, <x,8>, <y,8>}    |
+| BB14 | {<k,4>, <a,4>}                  | {<a,4>}                            | {<a,4>}                                | {<a,4>}                                |
+| BB15 | {<k,4>, <a,4>}                  | {<k,4>, <a,4>}                    | {<k,4>}                                | {<a,4>}                                |
+
+
+
+
