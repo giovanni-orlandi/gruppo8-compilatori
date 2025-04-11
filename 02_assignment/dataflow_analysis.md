@@ -103,6 +103,17 @@ L'implementazione, pur essendo realizzabile nuovamente tramite bit-vector, è st
 | **Boundary Condition**   | $out[\text{Entry}] = \text{Entry}$ |
 | **Initial interior points** | $out[b] = \text{Universal set}$ |
 
+### Lista dei dominatori
+
+|  BB           | In[b] | Out[b] |
+|-------------|-------|--------|
+| A (Entry) | 0     | {A}    |
+| B         | {A}   | {A, B}    |
+| C         | {A}   | {A, C}    |
+| D         | {A, C}   | {A, C, D}    |
+| E        | {A, C}   | {A, C, E}    |
+| F         | {A, C}   | {A, C, F}    |
+| G (Exit)     | {A}   | {A, G}    |
 
 ---
 
