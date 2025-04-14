@@ -25,3 +25,10 @@ Questa cartella contiene il codice relativo al primo assignment.
 
 Si rimanda alla documentazione dentro la cartella: 
 [`README.md`](https://github.com/giovanni-orlandi/gruppo8-compilatori/blob/main/01_assignment/README.md)
+
+---
+
+## Cartella: `02_assignment`
+
+Questa cartella contiene la realizzazione del secondo assignment, in quest'unico file: [`dataflow_analysis.md`](https://github.com/giovanni-orlandi/gruppo8-compilatori/blob/main/02_assignment/dataflow_analysis.md)
+
