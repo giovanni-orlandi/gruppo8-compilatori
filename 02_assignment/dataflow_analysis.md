@@ -12,7 +12,7 @@ Componenti:
 
 Questo documento presenta il lavoro svolto dal gruppo 8 per l'Assignment 2 del corso di Compilatori, incentrato sull'implementazione di analisi di flusso di dati (**Dataflow Analysis**) all'interno di un compilatore.
 
-L'obiettivo principale dell'assegnamento era progettare e implementare un'analisi capace di raccogliere informazioni statiche sul comportamento dei programmi, utilizzando tecniche standard di forward e backward analysis. L'analisi è stata sviluppata seguendo i principi teorici introdotti a lezione, adattandoli al contesto pratico fornito.
+L'obiettivo principale dell'assegnamento è progettare e implementare un'analisi utilizzando tecniche standard di forward e backward analysis. L'analisi è stata sviluppata seguendo i principi teorici introdotti a lezione, adattandoli al contesto pratico fornito.
 
 ---
 
@@ -37,18 +37,19 @@ Serve ad ottimizzare via **code hoisting**, ovvero anticipare il calcolo di espr
 
 dove:
 - $Gen_b$: espressioni generate da istruzioni nel basic block. Es: `a = x + y` genera `x + y` 
-- $Kill_b$: ogni espressione di assegnamento killa le espressioni in cui la variabile riassegnata e' un operando 
+- $Kill_b$: ogni espressione di assegnamento killa le espressioni in cui la variabile riassegnata è un operando 
 
-L'implementazione e' stata pensata con un bit vector per ogni basic block. La lunghezza di ogni bit vector e' pari al numero di espressioni presenti nel CFG.  
-In questo caso specifico il bit vector sara' lungo 2:
+L'implementazione è stata pensata con un bit vector per ogni basic block. La lunghezza di ogni bit vector è pari al numero di espressioni presenti nel CFG.  
+In questo caso specifico il bit vector sarà lungo 2:
 - **indice 0** → `b-a` (e1)
 - **indice 1** → `a-b` (e2)
 
 Esempio:
 - `[1, 0]` vuol dire che `b-a` è busy, `a-b` no.
 
+### Esercizio
 
-### Tabella di Generazione/Kill
+#### Tabella di Generazione/Kill
 
 |      | Gen   | Kill     |
 |------|-------|----------|
@@ -61,7 +62,7 @@ Esempio:
 | BB7  | e2    | ∅        |
 | BB8  | ∅     | ∅        |
 
-### Tabella dei Bit Vector
+#### Tabella dei Bit Vector
 
 |             | In[b] | Out[b] |
 |-------------|-------|--------|
@@ -81,16 +82,10 @@ Esempio:
 
 In un **CFG** diciamo che un nodo *X* **domina** un altro nodo *Y* se il nodo *X* appare in ogni percorso del grafo che porta dal blocco *Entry* al blocco *Y*.
 
-La funzione di trasferimento risulta molto semplice, perche' quello che deve fare ogni blocco e' aggiungere il proprio blocco alla lista dei **dominator** che ha ricevuto in ingresso e propagare tale lista aggiornata in uscita.  
-Visto che per essere un **dominator** un blocco *x* bisogna che per arrivare al blocco *b* in questione, dove si sta facendo l'analisi, tutti i percorsi possibili attraversino il blocco *x*, come **meet operation** si utilizza l'intersezione di tutti gli output dei predecessori del blocco *b*.
-
-
-In un CFG, diciamo che un nodo *X* domina un nodo *Y* se *X* appare in **ogni percorso** che conduce dal blocco *Entry* al blocco *Y*.
-
 La funzione di trasferimento risulta molto semplice: ogni blocco deve aggiungere se stesso all'insieme dei dominator ricevuto in ingresso e propagare questa lista aggiornata in uscita.  
-Poiché un blocco *A* è dominatore di un blocco *B* se e solo se tutti i percorsi che portano a *B* passano per *X*, la **meet operation** da usare è l'intersezione degli output di tutti i predecessori del blocco *B*.
+Poiché un blocco *A* è dominatore di un blocco *B* se e solo se tutti i percorsi che portano a *B* passano per *A*, la **meet operation** da usare è l'intersezione degli output di tutti i predecessori del blocco *B*.
 
-L'implementazione, pur essendo realizzabile nuovamente tramite bit-vector, è stata pensata come una lista contenente i **dominatori**, rappresentati dai loro nomi dei blocchi base (BB), per risultare più agevole da gestire su carta e più intuitiva alla lettura umana.
+L'implementazione, pur essendo realizzabile nuovamente tramite bit-vector, è stata pensata come una lista contenente i **dominatori**, rappresentati dai nomi dei BB, per risultare più agevole da gestire su carta e più intuitiva alla lettura umana.
 
 |                          | Dominator Analysis |
 |--------------------------|--------------------|
@@ -103,11 +98,13 @@ L'implementazione, pur essendo realizzabile nuovamente tramite bit-vector, è st
 | **Boundary Condition**   | $out[\text{Entry}] = \text{Entry}$ |
 | **Initial interior points** | $out[b] = \text{Universal set}$ |
 
-### Lista dei dominatori
+### Esercizio
+
+#### Lista dei dominatori
 
 |  BB           | In[b] | Out[b] |
 |-------------|-------|--------|
-| A (Entry) | 0     | {A}    |
+| A (Entry) | ∅     | {A}    |
 | B         | {A}   | {A, B}    |
 | C         | {A}   | {A, C}    |
 | D         | {A, C}   | {A, C, D}    |
@@ -132,7 +129,7 @@ Le funzioni *Gen* e *Kill* risultano qui più articolate:
 
 - **Kill**: ogni assegnamento invalida tutte le precedenti coppie associate al left-value, indipendentemente dal valore.
 
-Dal punto di vista tecnico, si utilizza un array dinamico per ospitare le coppie. Ancora una volta, si potrebbe usare un vettore non binario ma con l'eventuale valore costante salvato dentro, ma risulta poco pratico a mano.
+Dal punto di vista tecnico, si utilizza una lista per ospitare le coppie. Ancora una volta, si potrebbe usare un vettore non binario ma con l'eventuale valore costante salvato dentro, ma risulta poco pratico a mano.
 
 
 Poiché una variabile è considerata costante in un blocco solo se è costante in **tutti** i suoi predecessori, la **meet operation** adottata è l'**intersezione**.  
