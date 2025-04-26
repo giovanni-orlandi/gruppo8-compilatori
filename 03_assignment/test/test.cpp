@@ -6,28 +6,23 @@
 
 */
 
-// int g(int a){
-//     // Sottrazione con elemento neutro (0)
-//     int sub1 = 0 - a;
-//     int b = a - 0; // = a
-//     return b;
-// }
 
 
 int foo() {
     int a = 2;
     int b = 3;
+    int a1, a2, a3;
     for(int i = 0; i < a; i++){
-        int a1 = a+b;
+        a1 = a+b;
         for(int j = 0; j < b; i++){
             for(int q = 0; q < 100; q++){
-                int a3 = 2;
+                a3 = a + 2;
             }
         }
         for(int z = 0; z < 100; z++){
-            int a2 = b + 2;
+            a2 = b + 2;
         }
-        
+        int a4 = a1 + 3;
     }
     return a;
 }

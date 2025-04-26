@@ -26,9 +26,8 @@ struct CMLIOpt : PassInfoMixin<CMLIOpt> {
     LoopInfo &LI = AM.getResult<LoopAnalysis>(F);
     modified = analyze_loop(LI);
 
-
-
     return modified ? PreservedAnalyses::none() : PreservedAnalyses::all();
+    
   }
 
   // Without isRequired returning true, this pass will be skipped for functions
