@@ -8,21 +8,26 @@
 
 
 
-int foo() {
-    int a = 2;
-    int b = 3;
-    int a1, a2, a3;
-    for(int i = 0; i < a; i++){
+int foo(int a, int b) {
+    int a1, a2, a3, a4;
+    a3 = a;
+    while (true){
         a1 = a+b;
-        for(int j = 0; j < b; i++){
-            for(int q = 0; q < 100; q++){
-                a3 = a + 2;
-            }
+        if(a2 > 0){
+            a3 = a * b;
+            break;
         }
-        for(int z = 0; z < 100; z++){
+        else{
             a2 = b + 2;
         }
-        int a4 = a1 + 3;
     }
+    a4 = a1 * 100;
+    // a1 = 2;
+    // for(int i = 0; i < a; i++){
+    //     a1 = a+b;
+    //     a4 = a3 + 3;
+    // }
+    a3 = a * 100;
+    a2 = a1 * 100;
     return a;
 }

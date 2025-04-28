@@ -24,7 +24,7 @@ struct CMLIOpt : PassInfoMixin<CMLIOpt> {
   PreservedAnalyses run(Function &F, FunctionAnalysisManager &AM) {
 
     LoopInfo &LI = AM.getResult<LoopAnalysis>(F);
-    modified = analyze_loop(LI);
+    modified = analyze_loop(AM, LI);
 
     return modified ? PreservedAnalyses::none() : PreservedAnalyses::all();
     
