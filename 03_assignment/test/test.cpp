@@ -27,7 +27,7 @@ int foo(int a, int b) {
     //     a1 = a+b;
     //     a4 = a3 + 3;
     // }
-    a3 = a * 100;
-    a2 = a1 * 100;
+    // a3 = a * 100;
+    // a2 = a1 * 100;
     return a;
 }

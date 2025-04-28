@@ -26,8 +26,6 @@ define dso_local noundef i32 @_Z3fooii(i32 noundef %0, i32 noundef %1) #0 {
 
 11:                                               ; preds = %6
   %12 = mul nsw i32 %4, 100
-  %13 = mul nsw i32 %0, 100
-  %14 = mul nsw i32 %4, 100
   ret i32 %0
 }
 
