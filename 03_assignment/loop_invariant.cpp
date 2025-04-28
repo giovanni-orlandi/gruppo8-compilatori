@@ -1,7 +1,10 @@
 using namespace llvm;
 
-// Funzione ausiliaria: ci serve per controllare che un'istruzione e' dentro la lista delle istruzioni
-// loop-invariant trovate 
+// Variabili globali
+std::vector<Instruction *> LI_instructions;
+Loop *L = nullptr;
+
+// Funzione ausiliaria: controlla se un elemento è nel vettore
 bool is_in_vector(const std::vector<Instruction*>& vec, const Instruction* elem) {
   return std::find(vec.begin(), vec.end(), elem) != vec.end();
 }
@@ -12,158 +15,71 @@ loop invariant, e' loop invariant. Ritorna true in uno dei seguenti due casi:
 1. operando e' definito in un blocco fuori dal loop
 2. operando e' definito da un'istruzione dentro il loop ma che e' gia' stata taggata come loop-invariant
 */ 
-// bool is_operand_invariant(std::vector<Instruction*>& LI_instructions, Loop *L, Value *op) {
-//   if (Instruction *op_inst = dyn_cast<Instruction>(op)) {
-//       bool OpInside = false;
-//       if (L->contains(op_inst->getParent()))
-//           OpInside = true;
 
-//       if (is_in_vector(LI_instructions, op_inst))
-//           OpInside = false;
+bool is_operand_invariant(Value *op) {
+  if (Instruction *op_inst = dyn_cast<Instruction>(op)) {
+  
+    if (!L->contains(op_inst->getParent())) // 1. 
+      return true;
 
-//       return !OpInside;
-//   }
+      if (is_in_vector(LI_instructions, op_inst)) //2.
+      return true;
 
-//   // Se non è un'istruzione (tipo costante o argomento), è invariabile
-//   return false;
-// }
+    // Altrimenti, è dentro il loop e non ancora LI
+    return false;
+  }
+  // Se è una costante o qualcosa che non è un'istruzione, è invariabile
+  return true;
+}
 
-// // Dato un singolo Loop, ritorna una lista con tutte le istruzioni Loop-Invariant contenute nel loop
-// std::vector<Instruction*> get_LI_inst(Loop *L) {
+// Funzione principale: trova tutte le loop-invariant instructions
+int get_LI_instructions() {
+  if (!L) return 0;  
+  int count = 0;
 
-//   std::vector<Instruction*> LI_instructions;
+  for (auto *BB : depth_first(L->getHeader())) {
+    if(!L->contains(BB)){
+      continue;
+    }
+    for (auto &I : *BB) {
+      if (auto *BO = dyn_cast<BinaryOperator>(&I)) {
+        auto *op1 = BO->getOperand(0);
+        auto *op2 = BO->getOperand(1);
 
-//   // Visita in profondità partendo dall'header
-//   for (auto *BB : depth_first(L->getHeader())) {
-//       if (!L->contains(BB))
-//           continue;
+        if (is_operand_invariant(op1) && is_operand_invariant(op2)) {
+          outs() << "Istruzione " << I << " è LI\n";
+          LI_instructions.push_back(&I);
+          count++;
+        }
+      }
+    }
+  }
+  return count;
+}
 
-//       for (auto &I : *BB) {
-//           if (isa<BinaryOperator>(&I)) {
-//               auto *BO = cast<BinaryOperator>(&I);
-//               auto op1 = BO->getOperand(0);
-//               auto op2 = BO->getOperand(1);
-
-//               // bool op1_is_invariant = is_operand_invariant(LI_instructions, L, op1);
-//               // bool op2_is_invariant = is_operand_invariant(LI_instructions, L, op2);
-//               bool Op1Inside = false;
-//               bool Op2Inside = true;
-//               if (Instruction *Op1Inst = dyn_cast<Instruction>(op1)) {
-//                 if (L->contains(Op1Inst->getParent()))
-//                   Op1Inside = true;
-//                 if (std::find(LI_instructions.begin(), LI_instructions.end(), Op1Inst) != LI_instructions.end())
-//                   {
-//                   outs() << "1 " << Op1Inst << "\n";  
-//                   Op1Inside = false;}
-//               }
-
-//               if (Instruction *Op2Inst = dyn_cast<Instruction>(op2)) {
-//                   if (L->contains(Op2Inst->getParent()))
-//                     Op2Inside = true;
-//                   if (std::find(LI_instructions.begin(), LI_instructions.end(), Op2Inst) != LI_instructions.end())
-//                     {
-//                     Op2Inside = false;}
-//               }
-
-//               if (!Op1Inside && !Op2Inside) {
-//                   outs() << "Istruzione " << I << " è LI\n";
-//                   LI_instructions.push_back(&I);
-//               }
-
-//               // outs() << op1_is_invariant << " " << op2_is_invariant << "\n";
-//               // if (op1_is_invariant && op2_is_invariant) {
-//               //     outs() << "Istruzione " << I << " è loop-invariant\n";
-//               //     LI_instructions.push_back(&I);
-//               // }
-//           }
-//       }
-//   }
-
-//   return LI_instructions;
-// }
-
-// bool analyze_loop(LoopInfo &LI) {
-//   for (Loop *TopLoop : LI) {
-//       std::vector<Loop*> stack;
-//       stack.push_back(TopLoop);
-
-//       while (!stack.empty()) {
-//           Loop *L = stack.back();
-//           stack.pop_back();
-
-//           outs() << "Trovato loop con profondità: " << L->getLoopDepth() << "\n";
-//           std::vector<Instruction*> LI_instructions = get_LI_inst(L);
-
-//           for (Loop *SubLoop : L->getSubLoops()) {
-//               stack.push_back(SubLoop);
-//           }
-//       }
-//   }
-//   return false;
-// }
-
+// Analisi dei loop
 bool analyze_loop(LoopInfo &LI) {
-
   for (Loop *TopLoop : LI) {
     std::vector<Loop *> stack;
     stack.push_back(TopLoop);
 
     while (!stack.empty()) {
-        std::vector<Instruction *> LI_instructions;
-        Loop *L = stack.back();
-        stack.pop_back();
+      L = stack.back();
+      stack.pop_back();
 
-        outs() << "Trovato loop con profondità: " << L->getLoopDepth() << "\n";
-        int count = 0;
-        for(auto *BB : depth_first(L->getHeader())) {
-          if (!L->contains(BB)) {
-            //outs() << "Scartato Basic Block " << count++ << " perché non fa parte del loop\n";
-            continue;
-          }
-            //outs() << "Visiting Basic Block " << count++ << "\n";
-            for (auto &I : *BB) {
-                //outs() << "Istruzione Nel loop "<< count++ <<": " << I << "\n";
-                if(isa<BinaryOperator>(&I)) {
-                    auto *BO = cast<BinaryOperator>(&I);
-                    auto op1 = BO->getOperand(0);
-                    auto op2 = BO->getOperand(1);
+      outs() << "Trovato loop con profondità: " << L->getLoopDepth() << "\n";
 
-                    bool Op1Inside = false;
-                    bool Op2Inside = false;
+      // Resetta lista LI per ogni nuovo loop
+      LI_instructions.clear();
+      int count = get_LI_instructions();
+      outs() << "Sono state trovate " << count << " istruzioni LI.\n";
 
-
-                    if (Instruction *Op1Inst = dyn_cast<Instruction>(op1)) {
-                      if (L->contains(Op1Inst->getParent()))
-                        Op1Inside = true;
-                      if (is_in_vector(LI_instructions, Op1Inst))
-                        {
-                        Op1Inside = false;}
-                    }
-
-                    if (Instruction *Op2Inst = dyn_cast<Instruction>(op2)) {
-                        if (L->contains(Op2Inst->getParent()))
-                          Op2Inside = true;
-                        if (is_in_vector(LI_instructions, Op2Inst))
-                          {
-                          Op2Inside = false;}
-                    }
-
-                    if (!Op1Inside && !Op2Inside) {
-                      outs() << "Istruzione " << I << " è LI\n";
-                      LI_instructions.push_back(&I);
-                  }
-
-            }
-        }
-
-        
+      // Continua a visitare i loop figli
+      for (Loop *SubLoop : L->getSubLoops()) {
+        stack.push_back(SubLoop);
+      }
     }
-
-    for (Loop *SubLoop : L->getSubLoops()) {
-      stack.push_back(SubLoop);
   }
-  }
-}
 
-  return false;
+  return false;  // Restituisci false se la funzione non ha modificato IR
 }
