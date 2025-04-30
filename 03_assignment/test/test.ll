@@ -13,44 +13,50 @@ define dso_local noundef i32 @_Z3fooii(i32 noundef %0, i32 noundef %1) #0 {
   %8 = alloca i32, align 4
   store i32 %0, ptr %3, align 4
   store i32 %1, ptr %4, align 4
-  %9 = load i32, ptr %3, align 4
-  store i32 %9, ptr %7, align 4
-  br label %10
+  br label %9
 
-10:                                               ; preds = %2, %23
-  %11 = load i32, ptr %3, align 4
-  %12 = load i32, ptr %4, align 4
-  %13 = add nsw i32 %11, %12
-  store i32 %13, ptr %5, align 4
-  %14 = load i32, ptr %6, align 4
-  %15 = icmp sgt i32 %14, 0
-  br i1 %15, label %16, label %20
+9:                                                ; preds = %2, %25
+  %10 = load i32, ptr %8, align 4
+  %11 = icmp slt i32 %10, 10
+  br i1 %11, label %12, label %19
 
-16:                                               ; preds = %10
-  %17 = load i32, ptr %3, align 4
-  %18 = load i32, ptr %4, align 4
-  %19 = mul nsw i32 %17, %18
-  store i32 %19, ptr %7, align 4
-  br label %24
+12:                                               ; preds = %9
+  %13 = load i32, ptr %4, align 4
+  %14 = sdiv i32 %13, 5
+  store i32 %14, ptr %6, align 4
+  %15 = load i32, ptr %4, align 4
+  %16 = icmp slt i32 %15, 5
+  br i1 %16, label %17, label %18
 
-20:                                               ; preds = %10
+17:                                               ; preds = %12
+  br label %26
+
+18:                                               ; preds = %12
+  br label %25
+
+19:                                               ; preds = %9
+  %20 = load i32, ptr %3, align 4
   %21 = load i32, ptr %4, align 4
-  %22 = add nsw i32 %21, 2
-  store i32 %22, ptr %6, align 4
-  br label %23
+  %22 = add nsw i32 %20, %21
+  store i32 %22, ptr %5, align 4
+  %23 = load i32, ptr %7, align 4
+  %24 = add nsw i32 %23, 3
+  store i32 %24, ptr %8, align 4
+  br label %25
 
-23:                                               ; preds = %20
-  br label %10, !llvm.loop !6
+25:                                               ; preds = %19, %18
+  br label %9, !llvm.loop !6
 
-24:                                               ; preds = %16
-  %25 = load i32, ptr %5, align 4
-  %26 = mul nsw i32 %25, 100
-  store i32 %26, ptr %8, align 4
-  %27 = load i32, ptr %3, align 4
-  ret i32 %27
+26:                                               ; preds = %17
+  call void @llvm.trap()
+  unreachable
 }
 
+; Function Attrs: cold noreturn nounwind memory(inaccessiblemem: write)
+declare void @llvm.trap() #1
+
 attributes #0 = { mustprogress noinline nounwind uwtable "frame-pointer"="all" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cmov,+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
+attributes #1 = { cold noreturn nounwind memory(inaccessiblemem: write) }
 
 !llvm.module.flags = !{!0, !1, !2, !3, !4}
 !llvm.ident = !{!5}

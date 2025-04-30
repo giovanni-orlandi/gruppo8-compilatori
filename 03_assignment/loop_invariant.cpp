@@ -2,6 +2,7 @@ using namespace llvm;
 
 // Variabili globali
 std::vector<Instruction *> LI_instructions;
+std::vector<Instruction *> CMLI_instructions;
 Loop *L = nullptr;
 SmallVector<BasicBlock *, 4> ExitBlocks;
 
@@ -41,9 +42,10 @@ int get_LI_instructions() {
 
   for (auto *BB : depth_first(L->getHeader())) {
     if(!L->contains(BB)){
-      if(!is_in_container(ExitBlocks, BB)){
-        continue;
-      }
+      outs() << *L << "\n";
+      // if(!is_in_container(ExitBlocks, BB)){
+      continue;
+      // }
     }
     for (auto &I : *BB) {
       // outs() << "Istruzione: " << I << "\n";
@@ -85,7 +87,9 @@ bool verify_cm_on_instr(FunctionAnalysisManager &AM, Instruction *I){
           User *user = U.getUser(); // User è una Instruction o altro che usa il valore I
           Instruction *userInst = dyn_cast<Instruction>(user);
           BasicBlock *userBB = userInst->getParent();
-          if(!L->contains(userBB) || isa<PHINode>(userInst)){
+          // Condizione azzurra: sto controllando che non sia usata dopo
+          if(!L->contains(userBB) || isa<PHINode>(userInst)){ 
+          // if(!L->contains(userBB)){
             code_motion_condition = false;
             break;
           }
@@ -108,11 +112,14 @@ bool analyze_loop(FunctionAnalysisManager &AM, LoopInfo &LI) {
       L = stack.back();
       stack.pop_back();
 
+     if(L->isLoopSimplifyForm()){ 
+
       outs() << "Trovato loop con profondità: " << L->getLoopDepth() << "\n";
 
       // Resetta lista LI per ogni nuovo loop
       LI_instructions.clear();
       ExitBlocks.clear();
+      CMLI_instructions.clear();
 
       // Trova i blocchi di uscita del loop
       L->getUniqueExitBlocks(ExitBlocks);
@@ -127,9 +134,15 @@ bool analyze_loop(FunctionAnalysisManager &AM, LoopInfo &LI) {
 
             if(code_motion_condition){
               outs() << "Posso spostare l'istruzione " << *I << " fuori dal loop\n";
+
+              // TO-DO: sposta istruzione se le altre da cui dipendeva sono state spostate.
+              // Ci basta guardare che siano nel prehader: NO! Si rompe il loop.
+
+              // BasicBlock *loop_preheader = L->getLoopPreheader();
+
             }
       }
-
+     }
 
       // Continua a visitare i loop figli
       for (Loop *SubLoop : L->getSubLoops()) {

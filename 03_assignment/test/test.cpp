@@ -10,24 +10,45 @@
 
 int foo(int a, int b) {
     int a1, a2, a3, a4;
-    a3 = a;
-    while (true){
-        a1 = a+b;
-        if(a2 > 0){
-            a3 = a * b;
-            break;
+    // a3 = a;
+    // while (true){
+    //     a1 = a+b;
+    //     if(a2 > 0){
+    //         a3 = a * b;
+    //         break;
+    //     }
+    //     else{
+    //         a2 = b + 2;
+    //     }
+    // }
+    // a4 = a1 * 100;
+    // a1 = 2;
+    // a2 = 4;
+    while(true){
+        if(a4 < 10){
+            a2 = b/5;
+            if(b < 5){
+                break;
+            }
         }
         else{
-            a2 = b + 2;
+            a1 = a+b;
+            a4 = a3 + 3;
         }
     }
-    a4 = a1 * 100;
-    // a1 = 2;
-    // for(int i = 0; i < a; i++){
-    //     a1 = a+b;
-    //     a4 = a3 + 3;
+    // // a2 = a1 * 100;
+    // return a;
+
+    // while (true){
+    //     a1 = a + b;
+    //     if(a1 > 0){
+    //         a2 = a1+b;
+    //         if(a2 > 0){
+    //             break;
+    //         }
+    //     }
+    //     else{
+    //         int a3 = a*b;
+    //     }
     // }
-    // a3 = a * 100;
-    // a2 = a1 * 100;
-    return a;
 }
