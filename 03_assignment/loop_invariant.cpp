@@ -39,7 +39,7 @@ bool is_operand_invariant(Value *op) {
 Funzione che popola il vettore globale LI_instructions con le istruzioni LI, 
 facendo una visita depth_first
 */
-int get_LI_instructions() {
+int populate_LI_instructions() {
   if (!L) return 0;  
   int count = 0;
 
@@ -65,44 +65,100 @@ int get_LI_instructions() {
   return count;
 }
 
-// Verifica se un'istruzione soddisfa tutte le code motion condition e ritorna true in caso affermativo.
-bool verify_cm_on_instr(FunctionAnalysisManager &AM, Instruction *I){
+bool does_I_dominate_exit(FunctionAnalysisManager &AM, Instruction *I){
   int n = ExitBlocks.size();
-  bool code_motion_condition = false;
   BasicBlock *BB = I->getParent();
   DominatorTree &DT = AM.getResult<DominatorTreeAnalysis>(*BB->getParent()); 
   DomTreeNode *LI_Node = DT.getNode(BB);
-      int count = 0;
-      for (auto *DTN : breadth_first(LI_Node)) {
-        if (DTN->getBlock() == nullptr) continue;
-          if(is_in_container(ExitBlocks, DTN->getBlock())){
-            outs() << "Istruzione " << *I << " domina l'uscita " << count << "\n";
-            count++;
-          }
+  int count = 0;
+  for (auto *DTN : breadth_first(LI_Node)) {
+    if (DTN->getBlock() == nullptr) continue;
+      if(is_in_container(ExitBlocks, DTN->getBlock())){
+        outs() << "Istruzione " << *I << " domina l'uscita " << count << "\n";
+        count++;
       }
-      if (count == n){
-        code_motion_condition = true;
-      }
-      else{
-        code_motion_condition = true;
-        for (Use &U : I->uses()) {
-          User *user = U.getUser(); // User è una Instruction o altro che usa il valore I
-          Instruction *userInst = dyn_cast<Instruction>(user);
-          BasicBlock *userBB = userInst->getParent();
-          // Condizione azzurra: sto controllando che non sia usata dopo
-          if(!L->contains(userBB)){
-          // if(!L->contains(userBB)){
-            code_motion_condition = false;
-            break;
-          }
-          else if(isa<PHINode>(userInst)){ 
-            code_motion_condition = false;
-            break;
-          }
-      }
-      }
-    return code_motion_condition;
+  }
+  return count == n;
 
+}
+
+/*
+RICORDA: non controlla solo che sia DCE ma anche che non sia una phi,
+perche' spostare un'istruzione che dopo e' DCE ma che ha un uso dentro una phi
+cambierebbe la semantica, visto che e' il caso in cui si potrebbe usare la variabile prima
+di eseguire l'istruzione, proprio dentro il loop
+es:
+int foo(int a, int b, int c, int e, int f, int d){
+  while(true){
+    if(y < 10){
+      break;
+    }
+    else{
+      y = a*b;
+    }
+  }
+  return 0;
+}
+non posso spostare y = a*b anche se e' DCE perche' appunto il loop usa il valore di y prima.
+*/
+bool is_dce_after_loop(Instruction *I){
+  for (Use &U : I->uses()) {
+    User *user = U.getUser(); // User è una Instruction o altro che usa il valore I
+    Instruction *userInst = dyn_cast<Instruction>(user);
+    BasicBlock *userBB = userInst->getParent();
+    // Condizione azzurra: sto controllando che non sia usata dopo
+    if(!L->contains(userBB) || isa<PHINode>(userInst)){ 
+      return false;
+    }
+  }
+  return true;
+}
+
+// Verifica se un'istruzione soddisfa tutte le code motion condition e ritorna true in caso affermativo.
+bool verify_cm_on_instr(FunctionAnalysisManager &AM, Instruction *I){
+  bool code_motion_condition = true;
+
+  if(!does_I_dominate_exit(AM, I) && !is_dce_after_loop(I)){
+      code_motion_condition = false;
+  }
+  return code_motion_condition;
+}
+
+void populate_CM_instructions(FunctionAnalysisManager &AM){
+  for (auto I: LI_instructions){
+    bool code_motion_condition = verify_cm_on_instr(AM, I);
+
+      if(code_motion_condition){
+          outs() << "Posso spostare l'istruzione " << *I << " fuori dal loop\n";
+          CMLI_instructions.push_back(I);
+      }
+  }
+}
+
+void execute_motion(){
+  BasicBlock* loop_preheader_BB = L->getLoopPreheader();
+  Instruction* lp_terminator = loop_preheader_BB->getTerminator();
+  for (auto &I : CMLI_instructions) {
+    Value *op1 = I->getOperand(0);
+    Value *op2 = I->getOperand(1);
+  
+    bool op1_outside = true;
+    bool op2_outside = true;
+  
+    if (Instruction *opInst1 = dyn_cast<Instruction>(op1)) {
+      op1_outside = !L->contains(opInst1->getParent());
+    }
+  
+    if (Instruction *opInst2 = dyn_cast<Instruction>(op2)) {
+      op2_outside = !L->contains(opInst2->getParent());
+    }
+  
+    if (op1_outside && op2_outside) {
+      // outs() << " " << *I << "\n";
+      outs() << *lp_terminator << "\n";
+      I->moveBefore(lp_terminator); //TO-DO studia/sostituisci
+    }
+  }
 }
 
 /*
@@ -135,42 +191,14 @@ bool analyze_loop(FunctionAnalysisManager &AM, LoopInfo &LI) {
       L->getUniqueExitBlocks(ExitBlocks);
 
       // Individuazione LI e popolazione vettore LI_instructions
-      int count = get_LI_instructions();
+      int count = populate_LI_instructions();
       outs() << "Sono state trovate " << count << " istruzioni LI.\n";
       
       // Code motion
-      for (auto I: LI_instructions){
-        bool code_motion_condition = verify_cm_on_instr(AM, I);
+      populate_CM_instructions(AM);
 
-            if(code_motion_condition){
-              outs() << "Posso spostare l'istruzione " << *I << " fuori dal loop\n";
-              CMLI_instructions.push_back(I);
-            }
-      }
-      BasicBlock* loop_preheader_BB = L->getLoopPreheader();
-      Instruction* lp_terminator = loop_preheader_BB->getTerminator();
-      for (auto &I : CMLI_instructions) {
-        Value *op1 = I->getOperand(0);
-        Value *op2 = I->getOperand(1);
-      
-        bool op1_outside = true;
-        bool op2_outside = true;
-      
-        if (Instruction *opInst1 = dyn_cast<Instruction>(op1)) {
-          op1_outside = !L->contains(opInst1->getParent());
-        }
-      
-        if (Instruction *opInst2 = dyn_cast<Instruction>(op2)) {
-          op2_outside = !L->contains(opInst2->getParent());
-        }
-      
-        if (op1_outside && op2_outside) {
-          // outs() << " " << *I << "\n";
-          outs() << *lp_terminator << "\n";
-          I->moveBefore(lp_terminator); //TO-DO studia/sostituisci
-        }
-      }
-      
+      // Compi lo spostamento su tutte quelle CMLI, ma controllando che anche gli operandi siano stati spostati
+      execute_motion();
       
      }
 

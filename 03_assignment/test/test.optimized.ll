@@ -5,33 +5,35 @@ target triple = "x86_64-pc-linux-gnu"
 
 ; Function Attrs: mustprogress noinline nounwind uwtable
 define dso_local noundef i32 @_Z3fooiiii(i32 noundef %0, i32 noundef %1, i32 noundef %2, i32 noundef %3) #0 {
-  %5 = sdiv i32 %0, %1
-  br label %6
+  %5 = add nsw i32 %0, %1
+  %6 = sdiv i32 %5, 2
+  %7 = add nsw i32 %5, 310
+  %8 = add nsw i32 undef, 3
+  br label %9
 
-6:                                                ; preds = %14, %4
-  br label %7
+9:                                                ; preds = %17, %4
+  %.0 = phi i32 [ 0, %4 ], [ %10, %17 ]
+  %10 = add nsw i32 %.0, 1
+  %11 = icmp slt i32 %3, 10
+  br i1 %11, label %12, label %16
 
-7:                                                ; preds = %10, %6
-  %8 = icmp slt i32 %0, 10
-  br i1 %8, label %9, label %10
+12:                                               ; preds = %9
+  %13 = icmp slt i32 %1, 5
+  br i1 %13, label %14, label %15
 
-9:                                                ; preds = %7
-  br label %11
+14:                                               ; preds = %12
+  br label %18
 
-10:                                               ; preds = %7
-  br label %7, !llvm.loop !6
+15:                                               ; preds = %12
+  br label %17
 
-11:                                               ; preds = %9
-  %12 = icmp slt i32 %1, 10
-  br i1 %12, label %13, label %14
+16:                                               ; preds = %9
+  br label %17
 
-13:                                               ; preds = %11
-  br label %15
+17:                                               ; preds = %16, %15
+  br label %9, !llvm.loop !6
 
-14:                                               ; preds = %11
-  br label %6, !llvm.loop !8
-
-15:                                               ; preds = %13
+18:                                               ; preds = %14
   call void @llvm.trap()
   unreachable
 }
@@ -53,4 +55,3 @@ attributes #1 = { cold noreturn nounwind memory(inaccessiblemem: write) }
 !5 = !{!"Ubuntu clang version 19.1.1 (1ubuntu1~24.04.2)"}
 !6 = distinct !{!6, !7}
 !7 = !{!"llvm.loop.mustprogress"}
-!8 = distinct !{!8, !7}

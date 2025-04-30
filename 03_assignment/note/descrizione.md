@@ -18,6 +18,6 @@ Notazione tecnica: usiamo degli array globali per contenere, per ogni loop (e qu
 
 
 - [ ] Fare tanti test
-- [ ] Sistemare codice con funzioni ecc...
-- [ ] Finire questo documento
+- [V] Sistemare codice con funzioni ecc...
+- [ ] Finire questo documento + commentare il codice
 - [ ] Guardare quella cosa dello spostamento istruzioni
