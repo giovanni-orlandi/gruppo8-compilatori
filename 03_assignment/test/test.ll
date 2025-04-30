@@ -4,59 +4,69 @@ target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:
 target triple = "x86_64-pc-linux-gnu"
 
 ; Function Attrs: mustprogress noinline nounwind uwtable
-define dso_local noundef i32 @_Z3fooii(i32 noundef %0, i32 noundef %1) #0 {
-  %3 = alloca i32, align 4
-  %4 = alloca i32, align 4
+define dso_local noundef i32 @_Z3fooiiii(i32 noundef %0, i32 noundef %1, i32 noundef %2, i32 noundef %3) #0 {
   %5 = alloca i32, align 4
   %6 = alloca i32, align 4
   %7 = alloca i32, align 4
   %8 = alloca i32, align 4
-  store i32 %0, ptr %3, align 4
-  store i32 %1, ptr %4, align 4
-  br label %9
+  %9 = alloca i32, align 4
+  %10 = alloca i32, align 4
+  %11 = alloca i32, align 4
+  %12 = alloca i32, align 4
+  %13 = alloca i32, align 4
+  store i32 %0, ptr %5, align 4
+  store i32 %1, ptr %6, align 4
+  store i32 %2, ptr %7, align 4
+  store i32 %3, ptr %8, align 4
+  store i32 0, ptr %12, align 4
+  store i32 0, ptr %13, align 4
+  br label %14
 
-9:                                                ; preds = %2, %25
-  %10 = load i32, ptr %8, align 4
-  %11 = icmp slt i32 %10, 10
-  br i1 %11, label %12, label %19
+14:                                               ; preds = %4, %35
+  %15 = load i32, ptr %13, align 4
+  %16 = add nsw i32 %15, 1
+  store i32 %16, ptr %13, align 4
+  %17 = load i32, ptr %8, align 4
+  %18 = icmp slt i32 %17, 10
+  br i1 %18, label %19, label %24
 
-12:                                               ; preds = %9
-  %13 = load i32, ptr %4, align 4
-  %14 = sdiv i32 %13, 5
-  store i32 %14, ptr %6, align 4
-  %15 = load i32, ptr %4, align 4
-  %16 = icmp slt i32 %15, 5
-  br i1 %16, label %17, label %18
+19:                                               ; preds = %14
+  %20 = load i32, ptr %6, align 4
+  %21 = icmp slt i32 %20, 5
+  br i1 %21, label %22, label %23
 
-17:                                               ; preds = %12
-  br label %26
+22:                                               ; preds = %19
+  br label %36
 
-18:                                               ; preds = %12
-  br label %25
+23:                                               ; preds = %19
+  br label %35
 
-19:                                               ; preds = %9
-  %20 = load i32, ptr %3, align 4
-  %21 = load i32, ptr %4, align 4
-  %22 = add nsw i32 %20, %21
-  store i32 %22, ptr %5, align 4
-  %23 = load i32, ptr %7, align 4
-  %24 = add nsw i32 %23, 3
-  store i32 %24, ptr %8, align 4
-  br label %25
+24:                                               ; preds = %14
+  %25 = load i32, ptr %5, align 4
+  %26 = load i32, ptr %6, align 4
+  %27 = add nsw i32 %25, %26
+  store i32 %27, ptr %9, align 4
+  %28 = load i32, ptr %9, align 4
+  %29 = load i32, ptr %13, align 4
+  %30 = sdiv i32 %28, %29
+  store i32 %30, ptr %8, align 4
+  %31 = load i32, ptr %9, align 4
+  %32 = add nsw i32 %31, 310
+  store i32 %32, ptr %7, align 4
+  %33 = load i32, ptr %11, align 4
+  %34 = add nsw i32 %33, 3
+  store i32 %34, ptr %12, align 4
+  br label %35
 
-25:                                               ; preds = %19, %18
-  br label %9, !llvm.loop !6
+35:                                               ; preds = %24, %23
+  br label %14, !llvm.loop !6
 
-26:                                               ; preds = %17
-  call void @llvm.trap()
-  unreachable
+36:                                               ; preds = %22
+  %37 = load i32, ptr %12, align 4
+  ret i32 %37
 }
 
-; Function Attrs: cold noreturn nounwind memory(inaccessiblemem: write)
-declare void @llvm.trap() #1
-
 attributes #0 = { mustprogress noinline nounwind uwtable "frame-pointer"="all" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cmov,+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
-attributes #1 = { cold noreturn nounwind memory(inaccessiblemem: write) }
 
 !llvm.module.flags = !{!0, !1, !2, !3, !4}
 !llvm.ident = !{!5}

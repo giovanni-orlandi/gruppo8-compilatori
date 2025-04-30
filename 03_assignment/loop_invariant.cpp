@@ -83,18 +83,20 @@ bool verify_cm_on_instr(FunctionAnalysisManager &AM, Instruction *I){
         code_motion_condition = true;
       }
       else{
+        code_motion_condition = true;
         for (Use &U : I->uses()) {
           User *user = U.getUser(); // User è una Instruction o altro che usa il valore I
           Instruction *userInst = dyn_cast<Instruction>(user);
           BasicBlock *userBB = userInst->getParent();
           // Condizione azzurra: sto controllando che non sia usata dopo
-          if(!L->contains(userBB) || isa<PHINode>(userInst)){ 
+          if(!L->contains(userBB)){
           // if(!L->contains(userBB)){
             code_motion_condition = false;
             break;
           }
-          else{
-            code_motion_condition = true;
+          else if(isa<PHINode>(userInst)){ 
+            code_motion_condition = false;
+            break;
           }
       }
       }
@@ -111,7 +113,6 @@ bool analyze_loop(FunctionAnalysisManager &AM, LoopInfo &LI) {
     while (!stack.empty()) {
       L = stack.back();
       stack.pop_back();
-
      if(L->isLoopSimplifyForm()){ 
 
       outs() << "Trovato loop con profondità: " << L->getLoopDepth() << "\n";
@@ -134,7 +135,7 @@ bool analyze_loop(FunctionAnalysisManager &AM, LoopInfo &LI) {
 
             if(code_motion_condition){
               outs() << "Posso spostare l'istruzione " << *I << " fuori dal loop\n";
-
+              CMLI_instructions.push_back(I);
               // TO-DO: sposta istruzione se le altre da cui dipendeva sono state spostate.
               // Ci basta guardare che siano nel prehader: NO! Si rompe il loop.
 
@@ -142,6 +143,31 @@ bool analyze_loop(FunctionAnalysisManager &AM, LoopInfo &LI) {
 
             }
       }
+      BasicBlock* loop_preheader_BB = L->getLoopPreheader();
+      Instruction* lp_terminator = loop_preheader_BB->getTerminator();
+      for (auto &I : CMLI_instructions) {
+        Value *op1 = I->getOperand(0);
+        Value *op2 = I->getOperand(1);
+      
+        bool op1_outside = true;
+        bool op2_outside = true;
+      
+        if (Instruction *opInst1 = dyn_cast<Instruction>(op1)) {
+          op1_outside = !L->contains(opInst1->getParent());
+        }
+      
+        if (Instruction *opInst2 = dyn_cast<Instruction>(op2)) {
+          op2_outside = !L->contains(opInst2->getParent());
+        }
+      
+        if (op1_outside && op2_outside) {
+          // outs() << " " << *I << "\n";
+          outs() << *lp_terminator << "\n";
+          I->moveBefore(lp_terminator);
+        }
+      }
+      
+      
      }
 
       // Continua a visitare i loop figli
