@@ -11,6 +11,18 @@
 int foo(int a, int b, int x, int y) {
     int a1, a2, a3, a4;
     a4 = 0;
+
+    while(true){
+        while(true){
+            x = a/b;
+            if(a < 10){
+                break;
+            }
+        }
+        if(b < 10){
+            break;
+        }
+    }
 //     // a3 = a;
 //     // while (true){
 //     //     a1 = a+b;
@@ -25,38 +37,38 @@ int foo(int a, int b, int x, int y) {
 //     // a4 = a1 * 100;
 //     // a1 = 2;
 //     // a2 = 4;
-int i = 0;
+// int i = 0;
 
-    while(true){
-        i++;
-        if(y < 10){
-            if(b < 5){
-                break;
-            }
-        }
-        else{
-            a1 = a+b;
-            y = a1 / i;
+//     while(true){
+//         i++;
+//         if(y < 10){
+//             if(b < 5){
+//                 break;
+//             }
+//         }
+//         else{
+//             a1 = a+b;
+//             y = a1 / i;
 
-            x = a1+310;
-            a4 = a3 + 3;
+//             x = a1+310;
+//             a4 = a3 + 3;
 
-        }
-    }
-    // for(int i = 0;i>50;i++){
-        // a1 = a + b;
-        // if(y < 10){
-        //     a2 = b/5;
-        // }
-        // else{
-        //     a1 = a+b;
-        //     x = a1+310;
-        //     a4 = a3 + 3;
-        // }
-    // }
+//         }
+//     }
+//     for(int i = 0;i>50;i++){
+//         a1 = a + b;
+//         if(y < 10){
+//             a2 = b/5;
+//         }
+//         else{
+//             a1 = a+b;
+//             x = a1+310;
+//             a4 = a3 + 3;
+//         }
+//     }
     //  a1 = a2*4;
     // a = a1;
-    return a4;
+    // return a4;
     // a = a1 * 4;
 //     // // a2 = a1 * 100;
 //     // return a;

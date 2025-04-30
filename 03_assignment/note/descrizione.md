@@ -15,3 +15,9 @@ Notazione tecnica: usiamo degli array globali per contenere, per ogni loop (e qu
 
    - get_LI_instructions -> per trovare le istruzioni LI fa una visita depth_first di tutti i blocchi del loop e, per ogni **istruzione binaria**, valuta i suoi due operandi tramite la funzione ausiliaria is_operand_invariant
      - is_operand_invariant -> ritona true se l'operando e' definito fuori dal loop oppure se e' esso stesso loop_invariant
+
+
+- [ ] Fare tanti test
+- [ ] Sistemare codice con funzioni ecc...
+- [ ] Finire questo documento
+- [ ] Guardare quella cosa dello spostamento istruzioni

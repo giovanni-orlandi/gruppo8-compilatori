@@ -6,7 +6,7 @@ std::vector<Instruction *> CMLI_instructions;
 Loop *L = nullptr;
 SmallVector<BasicBlock *, 4> ExitBlocks;
 
-// Funzione ausiliaria: controlla se un elemento è nel vettore
+// Utility: controlla se un elemento è nel vettore
 template <typename Container, typename Element>
 bool is_in_container(const Container& container, const Element& elem) {
     return std::find(container.begin(), container.end(), elem) != container.end();
@@ -14,10 +14,10 @@ bool is_in_container(const Container& container, const Element& elem) {
 
 
 /* 
-Funzione ausiliaria: ci serve per controllare che l'operando di un'istruzione, che stiamo controllando se puo' essere
-loop invariant, e' loop invariant. Ritorna true in uno dei seguenti due casi:
+Dato un operando, controlla se e' invariant per il loop corrente (variabile globale L)
+Ritorna true se:
 1. operando e' definito in un blocco fuori dal loop
-2. operando e' definito da un'istruzione dentro il loop ma che e' gia' stata taggata come loop-invariant
+2. operando e' definito da un'istruzione dentro il loop ma che e' gia' stata taggata come loop-invariant (e' dentro vettore LI_instructions)
 */ 
 bool is_operand_invariant(Value *op) {
   if (Instruction *op_inst = dyn_cast<Instruction>(op)) {
@@ -25,36 +25,37 @@ bool is_operand_invariant(Value *op) {
     if (!L->contains(op_inst->getParent())) // 1. 
       return true;
 
-      if (is_in_container(LI_instructions, op_inst)) //2.
+    if (is_in_container(LI_instructions, op_inst)) //2.
       return true;
 
     // Altrimenti, è dentro il loop e non ancora LI
     return false;
   }
-  // Se è una costante o qualcosa che non è un'istruzione, è invariabile
+  // Se è una costante o qualcosa che non è un'istruzione, è invariant
   return true;
 }
 
-// Funzione principale: trova tutte le loop-invariant instructions
+/*
+Funzione che popola il vettore globale LI_instructions con le istruzioni LI, 
+facendo una visita depth_first
+*/
 int get_LI_instructions() {
   if (!L) return 0;  
   int count = 0;
 
+  // Visita depth_first del CFG del loop, per mantenere l'ordine corretto e lavorare in maniera incrementale
   for (auto *BB : depth_first(L->getHeader())) {
     if(!L->contains(BB)){
-      outs() << *L << "\n";
-      // if(!is_in_container(ExitBlocks, BB)){
       continue;
-      // }
     }
     for (auto &I : *BB) {
-      // outs() << "Istruzione: " << I << "\n";
+      // Lavoriamo solo con operazioni binarie!
       if (auto *BO = dyn_cast<BinaryOperator>(&I)) {
         auto *op1 = BO->getOperand(0);
         auto *op2 = BO->getOperand(1);
-
+      // Un operazione e' LI se i suoi due operandi sono invariant
         if (is_operand_invariant(op1) && is_operand_invariant(op2)) {
-          // outs() << "Istruzione " << I << " è LI\n";
+          outs() << "Istruzione " << I << " è LI\n";
           LI_instructions.push_back(&I);
           count++;
         }
@@ -104,20 +105,28 @@ bool verify_cm_on_instr(FunctionAnalysisManager &AM, Instruction *I){
 
 }
 
-// Analisi dei loop
+/*
+Funzione da cui parte l'analisi, chiama le varie funzioni ausiliarie per i task e passi dell'algoritmo.
+*/
 bool analyze_loop(FunctionAnalysisManager &AM, LoopInfo &LI) {
+
+  // Scorro tutti i loop di primo livello
   for (Loop *TopLoop : LI) {
+
+    // Coda per ogni loop di primo livello, lo popoleremo con eventuali sub-loops
     std::vector<Loop *> stack;
     stack.push_back(TopLoop);
 
     while (!stack.empty()) {
       L = stack.back();
       stack.pop_back();
+
+      // Verifichiamo che loop sia in forma naturale
      if(L->isLoopSimplifyForm()){ 
 
       outs() << "Trovato loop con profondità: " << L->getLoopDepth() << "\n";
 
-      // Resetta lista LI per ogni nuovo loop
+      // Resetta liste globali per ogni nuovo loop
       LI_instructions.clear();
       ExitBlocks.clear();
       CMLI_instructions.clear();
@@ -125,7 +134,7 @@ bool analyze_loop(FunctionAnalysisManager &AM, LoopInfo &LI) {
       // Trova i blocchi di uscita del loop
       L->getUniqueExitBlocks(ExitBlocks);
 
-      // LI check
+      // Individuazione LI e popolazione vettore LI_instructions
       int count = get_LI_instructions();
       outs() << "Sono state trovate " << count << " istruzioni LI.\n";
       
@@ -136,11 +145,6 @@ bool analyze_loop(FunctionAnalysisManager &AM, LoopInfo &LI) {
             if(code_motion_condition){
               outs() << "Posso spostare l'istruzione " << *I << " fuori dal loop\n";
               CMLI_instructions.push_back(I);
-              // TO-DO: sposta istruzione se le altre da cui dipendeva sono state spostate.
-              // Ci basta guardare che siano nel prehader: NO! Si rompe il loop.
-
-              // BasicBlock *loop_preheader = L->getLoopPreheader();
-
             }
       }
       BasicBlock* loop_preheader_BB = L->getLoopPreheader();
@@ -163,7 +167,7 @@ bool analyze_loop(FunctionAnalysisManager &AM, LoopInfo &LI) {
         if (op1_outside && op2_outside) {
           // outs() << " " << *I << "\n";
           outs() << *lp_terminator << "\n";
-          I->moveBefore(lp_terminator);
+          I->moveBefore(lp_terminator); //TO-DO studia/sostituisci
         }
       }
       
