@@ -6,43 +6,42 @@ target triple = "x86_64-pc-linux-gnu"
 ; Function Attrs: mustprogress noinline nounwind uwtable
 define dso_local noundef i32 @_Z3fooiiii(i32 noundef %0, i32 noundef %1, i32 noundef %2, i32 noundef %3) #0 {
   %5 = add nsw i32 %0, %1
-  %6 = sdiv i32 %5, 2
-  %7 = add nsw i32 %5, 310
-  %8 = add nsw i32 undef, 3
-  br label %9
+  %6 = add nsw i32 %5, 310
+  br label %7
 
-9:                                                ; preds = %17, %4
-  %.0 = phi i32 [ 0, %4 ], [ %10, %17 ]
-  %10 = add nsw i32 %.0, 1
-  %11 = icmp slt i32 %3, 10
-  br i1 %11, label %12, label %16
+7:                                                ; preds = %17, %4
+  %.02 = phi i32 [ undef, %4 ], [ %.13, %17 ]
+  %.01 = phi i32 [ 0, %4 ], [ %.1, %17 ]
+  %.0 = phi i32 [ 0, %4 ], [ %8, %17 ]
+  %8 = add nsw i32 %.0, 1
+  %9 = icmp slt i32 %3, 10
+  br i1 %9, label %10, label %14
 
-12:                                               ; preds = %9
-  %13 = icmp slt i32 %1, 5
-  br i1 %13, label %14, label %15
+10:                                               ; preds = %7
+  %11 = icmp slt i32 %.02, 5
+  br i1 %11, label %12, label %13
 
-14:                                               ; preds = %12
+12:                                               ; preds = %10
   br label %18
 
-15:                                               ; preds = %12
+13:                                               ; preds = %10
   br label %17
 
-16:                                               ; preds = %9
+14:                                               ; preds = %7
+  %15 = sdiv i32 %5, 2
+  %16 = add nsw i32 undef, 3
   br label %17
 
-17:                                               ; preds = %16, %15
-  br label %9, !llvm.loop !6
+17:                                               ; preds = %14, %13
+  %.13 = phi i32 [ %.02, %13 ], [ %15, %14 ]
+  %.1 = phi i32 [ %.01, %13 ], [ %16, %14 ]
+  br label %7, !llvm.loop !6
 
-18:                                               ; preds = %14
-  call void @llvm.trap()
-  unreachable
+18:                                               ; preds = %12
+  ret i32 %.01
 }
 
-; Function Attrs: cold noreturn nounwind memory(inaccessiblemem: write)
-declare void @llvm.trap() #1
-
 attributes #0 = { mustprogress noinline nounwind uwtable "frame-pointer"="all" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cmov,+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
-attributes #1 = { cold noreturn nounwind memory(inaccessiblemem: write) }
 
 !llvm.module.flags = !{!0, !1, !2, !3, !4}
 !llvm.ident = !{!5}

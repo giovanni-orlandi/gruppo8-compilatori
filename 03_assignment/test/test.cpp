@@ -48,7 +48,7 @@ int i = 0;
     while(true){
         i++;
         if(y < 10){
-            if(b < 5){
+            if(a2 < 5){
                 break;
             }
         }
@@ -61,7 +61,7 @@ int i = 0;
 
         }
     }
-    // return a4;
+    return a4;
 //     for(int i = 0;i>50;i++){
 //         a1 = a + b;
 //         if(y < 10){

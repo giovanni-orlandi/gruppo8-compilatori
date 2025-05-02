@@ -13,6 +13,8 @@ bool is_in_container(const Container& container, const Element& elem) {
 }
 
 
+// ==================================== Inizio parte sulla Loop Invariant =================================================
+
 /* 
 Dato un operando, controlla se e' invariant per il loop corrente (variabile globale L)
 Ritorna true se:
@@ -64,7 +66,18 @@ int populate_LI_instructions() {
   }
   return count;
 }
+// ==================================== Fine parte sulla Loop Invariant ===================================================
 
+
+
+// ==================================== Inizio parte sulla Code Motion ====================================================
+
+/*
+Ritorna true se una determinata istruzione si trova in un blocco che domina tutte le uscite del loop corrente. 
+Per farlo, si scorre il DominatorTree partendo dal BB che contiene l'istruzione e, per ogni blocco che si incontra,
+si verifica che sia eventualmente contenuto nella lista ExitBlocks. Ogni volta che c'e' un match viene incrementato un contatore. 
+Alla fine, si controlla che questo contatore sia uguale al numero di Exit Blocks del loop.
+*/
 bool does_I_dominate_exit(FunctionAnalysisManager &AM, Instruction *I){
   int n = ExitBlocks.size();
   BasicBlock *BB = I->getParent();
@@ -84,7 +97,7 @@ bool does_I_dominate_exit(FunctionAnalysisManager &AM, Instruction *I){
 
 /*
 RICORDA: non controlla solo che sia DCE ma anche che non sia una phi,
-perche' spostare un'istruzione che dopo e' DCE ma che ha un uso dentro una phi
+perche' spostare un'istruzione che dopo e' DCE ma che ha un uso dentro ad una phi
 cambierebbe la semantica, visto che e' il caso in cui si potrebbe usare la variabile prima
 di eseguire l'istruzione, proprio dentro il loop
 es:
@@ -114,7 +127,12 @@ bool is_dce_after_loop(Instruction *I){
   return true;
 }
 
-// Verifica se un'istruzione soddisfa tutte le code motion condition e ritorna true in caso affermativo.
+/*
+Controlla che un'istruzione soddisfi le condizioni della code motion. 
+Tali condizioni sono violante nel caso in cui l'istruzione sia contenuta in un blocco che non domina tutte le uscite 
+oppure, in caso la prima condizione venga effettivamente violata, se la variabile definita dall'istruzione non e' DCE all'uscita
+del loop (si rimanda ai commenti sulle singole funzioni per una descrizione piu' chiara e accurata).
+*/
 bool verify_cm_on_instr(FunctionAnalysisManager &AM, Instruction *I){
   bool code_motion_condition = true;
 
@@ -124,18 +142,31 @@ bool verify_cm_on_instr(FunctionAnalysisManager &AM, Instruction *I){
   return code_motion_condition;
 }
 
+/*
+Funzione che popola il vettore globale CMLI_instructions con le istruzioni CMLI. 
+La logica effettiva e' dedicata alle funzioni descritte sopra.
+*/
 void populate_CM_instructions(FunctionAnalysisManager &AM){
   for (auto I: LI_instructions){
     bool code_motion_condition = verify_cm_on_instr(AM, I);
 
       if(code_motion_condition){
-          outs() << "Posso spostare l'istruzione " << *I << " fuori dal loop\n";
+          outs() << "Istruzione " << *I << " e' CMLI\n";
           CMLI_instructions.push_back(I);
       }
   }
 }
 
-void execute_motion(){
+/*
+Sposta le istruzioni candidate nel preheader, controllando che tutte le istruzioni invarianti da cui 
+questa dipende sono gia' state spostate (quindi controlliamo che il blocco che le contiene, che in caso di spostamento e' il preheader,
+non appartenga al loop).
+Essendo che il controllo dell'ordine corretto lo abbiamo gia' fatto in precedenza, calcolando le LI incrementalmente,
+non c'e' bisogno di controllarlo ora visto che le abbiamo inserite in un vettore che mantiene l'ordine.
+Ritorna true per riportare se il codice e' stato modificato o meno
+*/
+bool execute_motion(){
+  bool modified = false;
   BasicBlock* loop_preheader_BB = L->getLoopPreheader();
   Instruction* lp_terminator = loop_preheader_BB->getTerminator();
   for (auto &I : CMLI_instructions) {
@@ -154,22 +185,26 @@ void execute_motion(){
     }
   
     if (op1_outside && op2_outside) {
-      // outs() << " " << *I << "\n";
-      outs() << *lp_terminator << "\n";
-      I->moveBefore(lp_terminator); //TO-DO studia/sostituisci
+      outs() << "Posso spostare l'istruzione " << *I << " fuori dal loop\n";
+      I->moveBefore(lp_terminator); 
+      modified = true;
     }
   }
+  return modified;
 }
+
+// ==================================== Fine parte sulla Code Motion =====================================================
+
 
 /*
 Funzione da cui parte l'analisi, chiama le varie funzioni ausiliarie per i task e passi dell'algoritmo.
 */
 bool analyze_loop(FunctionAnalysisManager &AM, LoopInfo &LI) {
-
+  bool modified = false;
   // Scorro tutti i loop di primo livello
   for (Loop *TopLoop : LI) {
 
-    // Coda per ogni loop di primo livello, lo popoleremo con eventuali sub-loops
+    // Coda che viene creata per ogni loop di primo livello, lo popoleremo con eventuali sub-loops
     std::vector<Loop *> stack;
     stack.push_back(TopLoop);
 
@@ -191,15 +226,20 @@ bool analyze_loop(FunctionAnalysisManager &AM, LoopInfo &LI) {
       L->getUniqueExitBlocks(ExitBlocks);
 
       // Individuazione LI e popolazione vettore LI_instructions
+      outs() << "\nIndividuazione istruzioni LI...\n";
       int count = populate_LI_instructions();
       outs() << "Sono state trovate " << count << " istruzioni LI.\n";
       
       // Code motion
+      outs() << "\nVerifica condizioni CM su istruzioni LI...\n";
       populate_CM_instructions(AM);
 
       // Compi lo spostamento su tutte quelle CMLI, ma controllando che anche gli operandi siano stati spostati
-      execute_motion();
-      
+      outs() << "\nVerifica condizioni finali spostamento su istruzioni CMLI...\n";
+      bool res = execute_motion();
+      if(res){
+        modified = true;
+      }
      }
 
       // Continua a visitare i loop figli
@@ -209,5 +249,5 @@ bool analyze_loop(FunctionAnalysisManager &AM, LoopInfo &LI) {
     }
   }
 
-  return false;  // Restituisci false se la funzione non ha modificato IR
+  return modified;  // Restituisci false se la funzione non ha modificato IR
 }

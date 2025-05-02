@@ -8,13 +8,15 @@ define dso_local noundef i32 @_Z3fooiiii(i32 noundef %0, i32 noundef %1, i32 nou
   br label %5
 
 5:                                                ; preds = %17, %4
+  %.02 = phi i32 [ undef, %4 ], [ %.13, %17 ]
+  %.01 = phi i32 [ 0, %4 ], [ %.1, %17 ]
   %.0 = phi i32 [ 0, %4 ], [ %6, %17 ]
   %6 = add nsw i32 %.0, 1
   %7 = icmp slt i32 %3, 10
   br i1 %7, label %8, label %12
 
 8:                                                ; preds = %5
-  %9 = icmp slt i32 %1, 5
+  %9 = icmp slt i32 %.02, 5
   br i1 %9, label %10, label %11
 
 10:                                               ; preds = %8
@@ -31,18 +33,15 @@ define dso_local noundef i32 @_Z3fooiiii(i32 noundef %0, i32 noundef %1, i32 nou
   br label %17
 
 17:                                               ; preds = %12, %11
+  %.13 = phi i32 [ %.02, %11 ], [ %14, %12 ]
+  %.1 = phi i32 [ %.01, %11 ], [ %16, %12 ]
   br label %5, !llvm.loop !6
 
 18:                                               ; preds = %10
-  call void @llvm.trap()
-  unreachable
+  ret i32 %.01
 }
 
-; Function Attrs: cold noreturn nounwind memory(inaccessiblemem: write)
-declare void @llvm.trap() #1
-
 attributes #0 = { mustprogress noinline nounwind uwtable "frame-pointer"="all" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cmov,+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
-attributes #1 = { cold noreturn nounwind memory(inaccessiblemem: write) }
 
 !llvm.module.flags = !{!0, !1, !2, !3, !4}
 !llvm.ident = !{!5}
