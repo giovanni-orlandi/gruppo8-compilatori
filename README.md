@@ -32,3 +32,13 @@ Si rimanda alla documentazione dentro la cartella:
 
 Questa cartella contiene la realizzazione del secondo assignment, in quest'unico file: [`dataflow_analysis.md`](https://github.com/giovanni-orlandi/gruppo8-compilatori/blob/main/02_assignment/dataflow_analysis.md)
 
+---
+
+## Cartella: `03_assignment`
+
+Questa cartella contiene il codice relativo al terzi assignment.
+
+Si rimanda alla documentazione dentro la cartella: 
+[`README.md`](https://github.com/giovanni-orlandi/gruppo8-compilatori/blob/main/03_assignment/README.md)
+
+---
