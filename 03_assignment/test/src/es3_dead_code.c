@@ -1,6 +1,6 @@
 /* 
     COPY-PASTE BASH:
-    clang++ -Xclang -disable-O0-optnone -O0 -S -emit-llvm test/src/es3_dead_code.cpp -o test/test.ll && \
+    clang -Xclang -disable-O0-optnone -O0 -S -emit-llvm test/src/es3_dead_code.c -o test/test.ll && \
     opt -S -p mem2reg test/test.ll -o test/test.m2r.ll && \
     opt -load-pass-plugin ./build/libCMLIOpt.so -passes=cmli test/test.m2r.ll -S -o test/test.optimized.ll
 

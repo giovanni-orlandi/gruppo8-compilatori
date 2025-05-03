@@ -1,6 +1,6 @@
 /* 
     COPY-PASTE BASH:
-    clang++ -Xclang -disable-O0-optnone -O0 -S -emit-llvm test/src/es4_loop_anidati_1.cpp -o test/test.ll && \
+    clang -Xclang -disable-O0-optnone -O0 -S -emit-llvm test/src/es4_loop_anidati_1.c -o test/test.ll && \
     opt -S -p mem2reg test/test.ll -o test/test.m2r.ll && \
     opt -load-pass-plugin ./build/libCMLIOpt.so -passes=cmli test/test.m2r.ll -S -o test/test.optimized.ll
 
@@ -15,11 +15,11 @@ Prendendo la ottimizzazione di questo esempio, l'istruzione che definisce la var
 la variabile a), ma lo è rispetto al loop piu interno.
 */
 int foo4(int a, int b) {;
-    while(true){
+    while(1){
         if(a == 0){
             break;
         } else {
-            while(true){
+            while(1){
                 int y = 1 + a;
                 if(b == 0){
                     break;
