@@ -8,8 +8,8 @@
 
 
 /*
-Primo esempio: In questo esempio la istruzione che definisce la variabile c è valida per la code motion nel pre-header, infatti:
-- la variabile c è loop indipendent siccome entrambi i suoi operandi sono definiti fuori dal loop
+Primo esempio: l'istruzione che definisce la variabile c è valida per la code motion nel pre-header, infatti:
+- è loop indipendent siccome entrambi i suoi operandi sono definiti fuori dal loop
 - il ciclo compie ameno una iterazione, garantendo cosi che la variabile c domini tutte le uscite del loop
 */
 int foo1(int a, int b) {

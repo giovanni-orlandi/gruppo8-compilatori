@@ -9,7 +9,7 @@
 
 /*
 Quinto esempio: In questo caso invece la istruzione che definisce la variabile y è valida per la code motion rispetto al loop più esterno e quindi viene spostata nel 
-suo pre-header. Ovviamente la variabile y non verrà ottimizzata risepetto al loop piu interno perche già ottimizzata rispetto al loop piu esterno.
+suo pre-header. Ovviamente la variabile y non verrà ottimizzata rispetto al loop piu interno perche già ottimizzata rispetto al loop piu esterno.
 */
 int foo5(int a, int b, int c) {
     while(true){

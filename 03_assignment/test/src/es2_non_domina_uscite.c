@@ -9,7 +9,7 @@
 
 /*
 Secondo esempio: A differenza del primo esempio, in questo caso la variabile c (pur essendo LI) non domina tutte le uscite, infatti semplicemente guardando il cfg non
-abbiamo la certezza che il ciclo compia almeno una iterazione, quindi non possiamo spostare la definizione di c nel pre-header.
+abbiamo la certezza che il ciclo compia almeno un'iterazione, quindi non possiamo spostare la definizione di c nel pre-header.
 */
 int foo2(int a, int b) {
     int c;

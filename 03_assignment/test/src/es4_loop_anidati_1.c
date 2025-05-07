@@ -8,10 +8,10 @@
 
 
 /*
-Quarto esempio: Nel caso di piu loop annidati questi vengono analizzati mouventosi da quelli piu esterni a quelli piu interni. Questo perchè la ottimizzazione
+Quarto esempio: Nel caso di piu loop annidati questi vengono analizzati mouvendosi da quelli piu esterni a quelli piu interni. Questo perchè l'ottimizzazione
 migliore è quella che ci permette di spostare la definizione di una variabile nel pre-header del loop piu esterno. Le istruzioni che non vengono spostate perchè non 
-rispettano le condizioni di code motion riseptto al loop piu esterno, vengono analizzate rispetto al loop immediatamente più interno, e cosi via.
-Prendendo la ottimizzazione di questo esempio, l'istruzione che definisce la variabile y non è valida per la code motion rispetto al loop piu esterno (siccome non LI per
+rispettano le condizioni di code motion rispetto al loop piu esterno, vengono analizzate rispetto al loop immediatamente più interno, e cosi via.
+Prendendo l'ottimizzazione di questo esempio, l'istruzione che definisce la variabile y non è valida per la code motion rispetto al loop piu esterno (siccome non LI per
 la variabile a), ma lo è rispetto al loop piu interno.
 */
 int foo4(int a, int b) {;
