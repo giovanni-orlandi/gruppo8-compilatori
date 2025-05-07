@@ -72,6 +72,19 @@ int populate_LI_instructions() {
 
 // ==================================== Inizio parte sulla Code Motion ====================================================
 
+// Controllo che non ci siano definizioni multiple
+bool multiple_definitions(Instruction* I){
+  for (Use &U : I->uses()) {
+    User *user = U.getUser(); // User è una Instruction o altro che usa il valore I
+    Instruction *userInst = dyn_cast<Instruction>(user);
+    BasicBlock *userBB = userInst->getParent();
+    if(L->contains(userBB) && isa<PHINode>(userInst)){ 
+      return true;
+    }
+  }
+  return false;
+}
+
 /*
 Ritorna true se una determinata istruzione si trova in un blocco che domina tutte le uscite del loop corrente. 
 Per farlo, si scorre il DominatorTree partendo dal BB che contiene l'istruzione e, per ogni blocco che si incontra,
@@ -134,10 +147,10 @@ oppure, in caso la prima condizione venga effettivamente violata, se la variabil
 del loop (si rimanda ai commenti sulle singole funzioni per una descrizione piu' chiara e accurata).
 */
 bool verify_cm_on_instr(FunctionAnalysisManager &AM, Instruction *I){
-  bool code_motion_condition = true;
+  bool code_motion_condition = false;
 
-  if(!does_I_dominate_exit(AM, I) && !is_dce_after_loop(I)){
-      code_motion_condition = false;
+  if((does_I_dominate_exit(AM, I) || is_dce_after_loop(I)) && !multiple_definitions(I)){
+      code_motion_condition = true;
   }
   return code_motion_condition;
 }
