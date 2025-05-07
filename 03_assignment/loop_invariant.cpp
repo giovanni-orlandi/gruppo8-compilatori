@@ -127,18 +127,25 @@ int foo(int a, int b, int c, int e, int f, int d){
 }
 non posso spostare y = a*b anche se e' DCE perche' appunto il loop usa il valore di y prima.
 */
-bool is_dce_after_loop(Instruction *I){
+bool is_dce_after_loop(FunctionAnalysisManager &AM, Instruction *I) {
+  BasicBlock *defBB = I->getParent();
+  DominatorTree &DT = AM.getResult<DominatorTreeAnalysis>(*(defBB->getParent())); 
+
   for (Use &U : I->uses()) {
-    User *user = U.getUser(); // User è una Instruction o altro che usa il valore I
+    User *user = U.getUser();
     Instruction *userInst = dyn_cast<Instruction>(user);
+    if (!userInst) continue;
+
     BasicBlock *userBB = userInst->getParent();
-    // Condizione azzurra: sto controllando che non sia usata dopo
-    if(!L->contains(userBB) || isa<PHINode>(userInst)){ 
+
+    if ((!L->contains(userBB) && !DT.dominates(defBB, userBB)) || isa<PHINode>(userInst)) {
       return false;
     }
   }
+
   return true;
 }
+
 
 /*
 Controlla che un'istruzione soddisfi le condizioni della code motion. 
@@ -149,7 +156,7 @@ del loop (si rimanda ai commenti sulle singole funzioni per una descrizione piu'
 bool verify_cm_on_instr(FunctionAnalysisManager &AM, Instruction *I){
   bool code_motion_condition = false;
 
-  if((does_I_dominate_exit(AM, I) || is_dce_after_loop(I)) && !multiple_definitions(I)){
+  if((does_I_dominate_exit(AM, I) || is_dce_after_loop(AM, I)) && !multiple_definitions(I)){
       code_motion_condition = true;
   }
   return code_motion_condition;

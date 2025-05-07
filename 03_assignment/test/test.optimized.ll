@@ -4,30 +4,43 @@ target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:
 target triple = "x86_64-pc-linux-gnu"
 
 ; Function Attrs: mustprogress noinline nounwind uwtable
-define dso_local void @_Z3fooii(i32 noundef %0, i32 noundef %1) #0 {
+define dso_local noundef i32 @_Z4foo2ii(i32 noundef %0, i32 noundef %1) #0 {
   br label %3
 
-3:                                                ; preds = %10, %2
-  %.0 = phi i32 [ 0, %2 ], [ %7, %10 ]
-  %4 = icmp slt i32 %.0, 10
-  br i1 %4, label %5, label %6
+3:                                                ; preds = %15, %2
+  %.01 = phi i32 [ undef, %2 ], [ %.1, %15 ]
+  %4 = icmp ne i32 %0, 0
+  br i1 %4, label %5, label %11
 
 5:                                                ; preds = %3
-  br label %6
+  %6 = mul nsw i32 5, %1
+  %7 = icmp ne i32 %1, 1
+  br i1 %7, label %8, label %10
 
-6:                                                ; preds = %5, %3
-  %7 = mul nsw i32 3, %1
-  %8 = icmp eq i32 %1, 0
-  br i1 %8, label %9, label %10
+8:                                                ; preds = %5
+  %9 = add nsw i32 %6, 2
+  br label %16
 
-9:                                                ; preds = %6
-  br label %11
+10:                                               ; preds = %5
+  br label %15
 
-10:                                               ; preds = %6
+11:                                               ; preds = %3
+  %12 = icmp ne i32 %0, 1
+  br i1 %12, label %13, label %14
+
+13:                                               ; preds = %11
+  br label %16
+
+14:                                               ; preds = %11
+  br label %15
+
+15:                                               ; preds = %14, %10
+  %.1 = phi i32 [ %6, %10 ], [ %.01, %14 ]
   br label %3, !llvm.loop !6
 
-11:                                               ; preds = %9
-  ret void
+16:                                               ; preds = %13, %8
+  %.0 = phi i32 [ %9, %8 ], [ %.01, %13 ]
+  ret i32 %.0
 }
 
 attributes #0 = { mustprogress noinline nounwind uwtable "frame-pointer"="all" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cmov,+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
