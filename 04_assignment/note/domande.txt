@@ -1,0 +1,5 @@
+1. Loop solo naturali? Va bene loopsimplifyform...?
+
+2. Per scorrere i blocchi del loop, posso aggiungere anche quelli dell'exit?
+
+3. Nodo phi, controllo

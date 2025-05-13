@@ -1,0 +1,7 @@
+1. Identifichiamo le istruzioni loop invariant, scorrendo tutte le istruzioni e marcando come LI quelle che:
+    hanno tutti gli operandi con definizione fuori dal loop
+        OR
+    hanno tutti gli operandi che sono definiti da istruzioni loop-invariant
+Le istruzioni phi non saranno mai loop invariant, perche' sono come delle multiple reaching definitions
+
+2. 
