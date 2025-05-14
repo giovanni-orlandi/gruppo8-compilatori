@@ -1,33 +1,53 @@
-/* 
-    COPY-PASTE BASH:
-    clang -Xclang -disable-O0-optnone -O0 -S -emit-llvm test/src/es1_domina_uscite.c -o test/test.ll && \
-    opt -S -p mem2reg test/test.ll -o test/test.m2r.ll && \
-    opt -load-pass-plugin ./build/libCMLIOpt.so -passes=cmli test/test.m2r.ll -S -o test/test.optimized.ll
+// /* 
+//     COPY-PASTE BASH:
+//     clang -Xclang -disable-O0-optnone -O0 -S -emit-llvm test/src/es1_domina_uscite.c -o test/test.ll && \
+//     opt -S -p mem2reg test/test.ll -o test/test.m2r.ll && \
+//     opt -load-pass-plugin ./build/libCMLIOpt.so -passes=cmli test/test.m2r.ll -S -o test/test.optimized.ll
 
-*/
+// */
 
 
-/*
-Primo esempio: l'istruzione che definisce la variabile c è valida per la code motion nel pre-header, infatti:
-- è loop indipendent siccome entrambi i suoi operandi sono definiti fuori dal loop
-- il ciclo compie ameno una iterazione, garantendo cosi che la variabile c domini tutte le uscite del loop
-*/
-int foo1(int a, int b) {
-    int c;
-    while(1){
-        c = 1 + b;
-        if(a == 0){
-            break;
-        }
-        a--;    
+// /*
+// Primo esempio: l'istruzione che definisce la variabile c è valida per la code motion nel pre-header, infatti:
+// - è loop indipendent siccome entrambi i suoi operandi sono definiti fuori dal loop
+// - il ciclo compie ameno una iterazione, garantendo cosi che la variabile c domini tutte le uscite del loop
+// */
+// int foo1(int a, int b) {
+//     int c;
+//     if(b>0){
+//     for(int i = 0; i < a; i++){
+//         c = a +3;
+//     }
+//     }
+//     for(int i = 0; i < a; i++){
+//         a = a +3;
+//     }
+// //     if(b > 0){
+// //     while(b < 5){
+// //         c = 1+a;
+// //         a = b*3;
+// //     }
+// //     }
+// //     if (b<0){
+// //     while(b > a){
+// //         c = 1 + b;   
+// //         a = b*3;
+
+// //     }
+// // }
+//     return 0;
+// }
+
+void test(int n, int x){
+    int i = 0;
+    if (n>0){
+        do {
+            i +=1;
+        } while(i<n);
     }
-    while(1){
-        c = 1 + b;
-        if(a == 0){
-            break;
-        }
-        a--;    
+    if (n>0){
+        do {
+            i +=1;
+        } while(i<n);
     }
-    int a1 = c + 2;
-    return 0;
 }

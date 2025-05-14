@@ -4,57 +4,60 @@ target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:
 target triple = "x86_64-pc-linux-gnu"
 
 ; Function Attrs: mustprogress noinline nounwind uwtable
-define dso_local noundef i32 @_Z4foo1ii(i32 noundef %0, i32 noundef %1) #0 {
+define dso_local void @_Z4testii(i32 noundef %0, i32 noundef %1) #0 {
   %3 = alloca i32, align 4
   %4 = alloca i32, align 4
   %5 = alloca i32, align 4
-  %6 = alloca i32, align 4
   store i32 %0, ptr %3, align 4
   store i32 %1, ptr %4, align 4
-  br label %7
+  store i32 0, ptr %5, align 4
+  %6 = load i32, ptr %3, align 4
+  %7 = icmp sgt i32 %6, 0
+  br i1 %7, label %8, label %17
 
-7:                                                ; preds = %2, %13
-  %8 = load i32, ptr %4, align 4
-  %9 = add nsw i32 1, %8
-  store i32 %9, ptr %5, align 4
-  %10 = load i32, ptr %3, align 4
-  %11 = icmp eq i32 %10, 0
-  br i1 %11, label %12, label %13
+8:                                                ; preds = %2
+  br label %9
 
-12:                                               ; preds = %7
-  br label %16
+9:                                                ; preds = %12, %8
+  %10 = load i32, ptr %5, align 4
+  %11 = add nsw i32 %10, 1
+  store i32 %11, ptr %5, align 4
+  br label %12
 
-13:                                               ; preds = %7
+12:                                               ; preds = %9
+  %13 = load i32, ptr %5, align 4
   %14 = load i32, ptr %3, align 4
-  %15 = add nsw i32 %14, -1
-  store i32 %15, ptr %3, align 4
-  br label %7, !llvm.loop !6
+  %15 = icmp slt i32 %13, %14
+  br i1 %15, label %9, label %16, !llvm.loop !6
 
 16:                                               ; preds = %12
   br label %17
 
-17:                                               ; preds = %16, %23
-  %18 = load i32, ptr %4, align 4
-  %19 = add nsw i32 1, %18
-  store i32 %19, ptr %5, align 4
-  %20 = load i32, ptr %3, align 4
-  %21 = icmp eq i32 %20, 0
-  br i1 %21, label %22, label %23
+17:                                               ; preds = %16, %2
+  %18 = load i32, ptr %3, align 4
+  %19 = icmp sgt i32 %18, 0
+  br i1 %19, label %20, label %29
 
-22:                                               ; preds = %17
-  br label %26
+20:                                               ; preds = %17
+  br label %21
 
-23:                                               ; preds = %17
-  %24 = load i32, ptr %3, align 4
-  %25 = add nsw i32 %24, -1
-  store i32 %25, ptr %3, align 4
-  br label %17, !llvm.loop !8
+21:                                               ; preds = %24, %20
+  %22 = load i32, ptr %5, align 4
+  %23 = add nsw i32 %22, 1
+  store i32 %23, ptr %5, align 4
+  br label %24
 
-26:                                               ; preds = %22
-  %27 = load i32, ptr %5, align 4
-  %28 = add nsw i32 %27, 2
-  store i32 %28, ptr %6, align 4
-  ret i32 0
+24:                                               ; preds = %21
+  %25 = load i32, ptr %5, align 4
+  %26 = load i32, ptr %3, align 4
+  %27 = icmp slt i32 %25, %26
+  br i1 %27, label %21, label %28, !llvm.loop !8
+
+28:                                               ; preds = %24
+  br label %29
+
+29:                                               ; preds = %28, %17
+  ret void
 }
 
 attributes #0 = { mustprogress noinline nounwind uwtable "frame-pointer"="all" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cmov,+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
