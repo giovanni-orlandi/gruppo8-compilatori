@@ -8,55 +8,57 @@ define dso_local void @_Z4testii(i32 noundef %0, i32 noundef %1) #0 {
   %3 = alloca i32, align 4
   %4 = alloca i32, align 4
   %5 = alloca i32, align 4
+  %6 = alloca i32, align 4
   store i32 %0, ptr %3, align 4
   store i32 %1, ptr %4, align 4
   store i32 0, ptr %5, align 4
-  %6 = load i32, ptr %3, align 4
-  %7 = icmp sgt i32 %6, 0
-  br i1 %7, label %8, label %17
+  store i32 0, ptr %6, align 4
+  %7 = load i32, ptr %3, align 4
+  %8 = icmp slt i32 5, %7
+  br i1 %8, label %9, label %18
 
-8:                                                ; preds = %2
-  br label %9
+9:                                                ; preds = %2
+  br label %10
 
-9:                                                ; preds = %12, %8
-  %10 = load i32, ptr %5, align 4
-  %11 = add nsw i32 %10, 1
-  store i32 %11, ptr %5, align 4
-  br label %12
+10:                                               ; preds = %13, %9
+  %11 = load i32, ptr %6, align 4
+  %12 = add nsw i32 %11, 1
+  store i32 %12, ptr %6, align 4
+  br label %13
 
-12:                                               ; preds = %9
-  %13 = load i32, ptr %5, align 4
-  %14 = load i32, ptr %3, align 4
-  %15 = icmp slt i32 %13, %14
-  br i1 %15, label %9, label %16, !llvm.loop !6
+13:                                               ; preds = %10
+  %14 = load i32, ptr %5, align 4
+  %15 = load i32, ptr %3, align 4
+  %16 = icmp slt i32 %14, %15
+  br i1 %16, label %10, label %17, !llvm.loop !6
 
-16:                                               ; preds = %12
-  br label %17
+17:                                               ; preds = %13
+  br label %18
 
-17:                                               ; preds = %16, %2
-  %18 = load i32, ptr %3, align 4
-  %19 = icmp sgt i32 %18, 0
-  br i1 %19, label %20, label %29
+18:                                               ; preds = %17, %2
+  %19 = load i32, ptr %3, align 4
+  %20 = icmp sgt i32 %19, 5
+  br i1 %20, label %21, label %30
 
-20:                                               ; preds = %17
-  br label %21
+21:                                               ; preds = %18
+  br label %22
 
-21:                                               ; preds = %24, %20
-  %22 = load i32, ptr %5, align 4
-  %23 = add nsw i32 %22, 1
-  store i32 %23, ptr %5, align 4
-  br label %24
+22:                                               ; preds = %25, %21
+  %23 = load i32, ptr %4, align 4
+  %24 = add nsw i32 %23, 1
+  store i32 %24, ptr %4, align 4
+  br label %25
 
-24:                                               ; preds = %21
-  %25 = load i32, ptr %5, align 4
-  %26 = load i32, ptr %3, align 4
-  %27 = icmp slt i32 %25, %26
-  br i1 %27, label %21, label %28, !llvm.loop !8
+25:                                               ; preds = %22
+  %26 = load i32, ptr %5, align 4
+  %27 = load i32, ptr %3, align 4
+  %28 = icmp slt i32 %26, %27
+  br i1 %28, label %22, label %29, !llvm.loop !8
 
-28:                                               ; preds = %24
-  br label %29
+29:                                               ; preds = %25
+  br label %30
 
-29:                                               ; preds = %28, %17
+30:                                               ; preds = %29, %18
   ret void
 }
 

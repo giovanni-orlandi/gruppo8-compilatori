@@ -6,6 +6,7 @@
 
 #include "llvm/Analysis/LoopInfo.h"
 #include "llvm/IR/Dominators.h"
+#include "llvm/Analysis/PostDominators.h"
 #include "llvm/ADT/BreadthFirstIterator.h"
 
 #include "loop_fusion.cpp"
@@ -24,7 +25,11 @@ struct LFOpt : PassInfoMixin<LFOpt> {
   PreservedAnalyses run(Function &F, FunctionAnalysisManager &AM) {
 
     LoopInfo &LI = AM.getResult<LoopAnalysis>(F);
-    modified = analyze_loop(AM, LI);
+
+    DominatorTree &DT = AM.getResult<DominatorTreeAnalysis>(F);
+    PostDominatorTree &PDT = AM.getResult<PostDominatorTreeAnalysis>(F);
+
+    modified = analyze_loop(LI, DT, PDT);
 
     return modified ? PreservedAnalyses::none() : PreservedAnalyses::all();
     

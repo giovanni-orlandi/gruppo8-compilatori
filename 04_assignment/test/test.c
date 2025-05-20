@@ -14,14 +14,17 @@
 // */
 // int foo1(int a, int b) {
 //     int c;
-//     if(b>0){
+//     if(a > 3){
 //     for(int i = 0; i < a; i++){
 //         c = a +3;
 //     }
 //     }
+//     else{
 //     for(int i = 0; i < a; i++){
 //         a = a +3;
 //     }
+//     }
+// }
 // //     if(b > 0){
 // //     while(b < 5){
 // //         c = 1+a;
@@ -40,14 +43,15 @@
 
 void test(int n, int x){
     int i = 0;
-    if (n>0){
+    int j = 0;
+    if (5<n ){
         do {
-            i +=1;
+            j +=1;
         } while(i<n);
     }
-    if (n>0){
+    if (n>5 ){
         do {
-            i +=1;
+            x +=1;
         } while(i<n);
     }
 }

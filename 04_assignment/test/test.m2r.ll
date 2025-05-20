@@ -5,7 +5,7 @@ target triple = "x86_64-pc-linux-gnu"
 
 ; Function Attrs: mustprogress noinline nounwind uwtable
 define dso_local void @_Z4testii(i32 noundef %0, i32 noundef %1) #0 {
-  %3 = icmp sgt i32 %0, 0
+  %3 = icmp slt i32 5, %0
   br i1 %3, label %4, label %10
 
 4:                                                ; preds = %2
@@ -17,27 +17,26 @@ define dso_local void @_Z4testii(i32 noundef %0, i32 noundef %1) #0 {
   br label %7
 
 7:                                                ; preds = %5
-  %8 = icmp slt i32 %6, %0
+  %8 = icmp slt i32 0, %0
   br i1 %8, label %5, label %9, !llvm.loop !6
 
 9:                                                ; preds = %7
   br label %10
 
 10:                                               ; preds = %9, %2
-  %.1 = phi i32 [ %6, %9 ], [ 0, %2 ]
-  %11 = icmp sgt i32 %0, 0
+  %11 = icmp sgt i32 %0, 5
   br i1 %11, label %12, label %18
 
 12:                                               ; preds = %10
   br label %13
 
 13:                                               ; preds = %15, %12
-  %.2 = phi i32 [ %.1, %12 ], [ %14, %15 ]
-  %14 = add nsw i32 %.2, 1
+  %.01 = phi i32 [ %1, %12 ], [ %14, %15 ]
+  %14 = add nsw i32 %.01, 1
   br label %15
 
 15:                                               ; preds = %13
-  %16 = icmp slt i32 %14, %0
+  %16 = icmp slt i32 0, %0
   br i1 %16, label %13, label %17, !llvm.loop !8
 
 17:                                               ; preds = %15
