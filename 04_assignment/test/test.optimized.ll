@@ -24,25 +24,26 @@ define dso_local void @_Z4testii(i32 noundef %0, i32 noundef %1) #0 {
   br label %10
 
 10:                                               ; preds = %9, %2
-  %11 = icmp sgt i32 %0, 5
-  br i1 %11, label %12, label %18
+  %11 = add nsw i32 %1, 1
+  %12 = icmp sgt i32 %0, 5
+  br i1 %12, label %13, label %19
 
-12:                                               ; preds = %10
-  br label %13
+13:                                               ; preds = %10
+  br label %14
 
-13:                                               ; preds = %15, %12
-  %.01 = phi i32 [ %1, %12 ], [ %14, %15 ]
-  %14 = add nsw i32 %.01, 1
-  br label %15
+14:                                               ; preds = %16, %13
+  %.01 = phi i32 [ %11, %13 ], [ %15, %16 ]
+  %15 = add nsw i32 %.01, 1
+  br label %16
 
-15:                                               ; preds = %13
-  %16 = icmp slt i32 0, %0
-  br i1 %16, label %13, label %17, !llvm.loop !8
+16:                                               ; preds = %14
+  %17 = icmp slt i32 0, %0
+  br i1 %17, label %14, label %18, !llvm.loop !8
 
-17:                                               ; preds = %15
-  br label %18
+18:                                               ; preds = %16
+  br label %19
 
-18:                                               ; preds = %17, %10
+19:                                               ; preds = %18, %10
   ret void
 }
 

@@ -67,10 +67,18 @@ bool AreEquivalentComparisons(Value* expr0, Value* expr1) {
   return false;
 }
 
-bool clear_intermediate_bb(BasicBlock* bb){
+bool clear_intermediate_bb(BasicBlock* bb, bool is_guarded){
   for (Instruction &I : *bb) {
-    if (!(isa<ICmpInst>(&I) || isa<PHINode>(&I) || isa<BranchInst>(&I))) {
-        return false; // c'è qualcosa di diverso
+    outs() << I << "\n";
+    if(is_guarded){
+      if(!(isa<BranchInst>(&I) || isa<ICmpInst>(&I))){
+        return false;
+      }
+    }
+    else{
+      if(!isa<BranchInst>(&I)){
+        return false;
+      }
     }
 }
 return true;
@@ -78,8 +86,9 @@ return true;
 
 /*
 Controllo 1: adiacenza
+Ritorna 0 se non sono adiacenti, 1 se sono adiacenti caso guarded, 2 se sono adiacenti caso non guarded
 */
-bool are_adjacent(Loop* L0, Loop* L1){
+int are_adjacent(Loop* L0, Loop* L1){
   bool L0_guarded = L0->isGuarded();
   bool L1_guarded = L1->isGuarded();
 
@@ -124,9 +133,9 @@ bool are_adjacent(Loop* L0, Loop* L1){
 
     if(out_guard0 == entry1){
     printSeparator("EXIT DI GUARD0 FUORI DAL LOOP0 PUNTA ALL'ENTRY DEL LOOP1");
-      if(!clear_intermediate_bb(out_guard0)){
+      if(!clear_intermediate_bb(out_guard0, true)){
         outs() << "Ci sono istruzioni in mezzo\n";
-        return false;
+        return 0;
       }
       outs() << "BB0: " << *out_guard0 << "\n";
       outs() << "BB1: " << *entry1 << "\n";
@@ -146,7 +155,7 @@ bool are_adjacent(Loop* L0, Loop* L1){
       }
       else{
         outs() << "Le condizioni delle due guardie sono diverse\n";
-        return false;
+        return 0;
       }
 
       // Controllo condizione uguale
@@ -165,10 +174,10 @@ bool are_adjacent(Loop* L0, Loop* L1){
       // if (is_out_first1 == is_out_first0){
           // inverted = false;
       // }
-      return true;
+      return 1;
 
     }
-    return false;
+    return 0;
 
   }
 
@@ -178,29 +187,46 @@ bool are_adjacent(Loop* L0, Loop* L1){
     BasicBlock* PreHeaderL1 = L1->getLoopPreheader();
     outs() << *ExitL0 << "\n";
     outs() << *PreHeaderL1 << "\n";
-    if(clear_intermediate_bb(ExitL0)){
-      return ExitL0 == PreHeaderL1;
+    if(clear_intermediate_bb(PreHeaderL1, false)){
+      if(ExitL0 == PreHeaderL1){
+        return 2;
+      }
     }
-    return false;
+    return 0;
   }
-  return false;
+  return 0;
 }
 
-bool are_cf_equivalent(Loop* L0, Loop* L1, DominatorTree& DT, PostDominatorTree& PDT){
-  BasicBlock *B0 = L0->getHeader();
-  BasicBlock *B1 = L1->getHeader();
+bool are_cf_equivalent(Loop* L0, Loop* L1, DominatorTree& DT, PostDominatorTree& PDT, int check1){
+  printSeparator("Check3");
+  BasicBlock *B0 = nullptr;
+  BasicBlock *B1 = nullptr;
+  
+  if(check1 == 2){ 
+    B0 = L0->getLoopPreheader();
+    B1 = L1->getLoopPreheader();
+  }
+  else if(check1 == 1){ // Caso in cui devo controllare se sono cf equivalenti e sono guarded
+    B0 = L0->getLoopGuardBranch()->getParent();
+    B1 = L1->getLoopGuardBranch()->getParent();
+  }
 
   //Check sulla dominanza L0->L1
   bool L0_dom_L1 = false;
   DomTreeNode *LI_Node = DT.getNode(B0);
   for (auto *DTN : breadth_first(LI_Node)) {
+    // outs() << "inizio loop\n";
     if (DTN->getBlock() == nullptr) continue;
+    // outs() << "continua...\n";
     BasicBlock* curr_block = DTN->getBlock();
+    outs() << *curr_block << "\n";
     if (curr_block == B1){
+      outs() << "Dominanza okay\n";
       L0_dom_L1 = true;
       break;
     }
   }
+
   bool L1_postdom_L0 = false;
 
   //Check sulla postdominanza L1->L0
@@ -218,10 +244,24 @@ bool are_cf_equivalent(Loop* L0, Loop* L1, DominatorTree& DT, PostDominatorTree&
 
 }
 
+
+bool same_number_of_iterations(Loop* L0, Loop *L1, ScalarEvolution &SE){
+  printSeparator("CHECK 2");
+  auto *TripCount0 = SE.getBackedgeTakenCount(L0);
+  auto *TripCount1 = SE.getBackedgeTakenCount(L1);
+  outs() << "TC0: " << *TripCount0 << "\n";
+  outs() << "TC1: " << *TripCount1 << "\n";
+  if(TripCount0 == TripCount1){
+    return true;
+  }
+  return false;
+}
+
+
 /*
 Funzione da cui parte l'analisi, chiama le varie funzioni ausiliarie per i task e passi dell'algoritmo.
 */
-bool analyze_loop(LoopInfo &LI, DominatorTree& DT, PostDominatorTree& PDT) {
+bool analyze_loop(LoopInfo &LI, DominatorTree& DT, PostDominatorTree& PDT, ScalarEvolution &SE) {
   // outs() << "here2\n";
   bool modified = false;
 
@@ -241,12 +281,21 @@ bool analyze_loop(LoopInfo &LI, DominatorTree& DT, PostDominatorTree& PDT) {
   for(int i = Worklist.size() - 1; i >= 1; i--){
     Loop* L0 = Worklist[i];
     Loop* L1 = Worklist[i-1];  
-    bool check1 = are_adjacent(L0, L1);
+    int check1 = are_adjacent(L0, L1);
     if(check1){
       outs() << "Check 1 passato per i due loop L" << i << " e L" << i+1 << "\n"; 
-      bool check3 = are_cf_equivalent(L0, L1, DT, PDT);
+      bool check3 = are_cf_equivalent(L0, L1, DT, PDT, check1);
       if(check3){
         outs() << "Check 3 superato\n";
+        bool check2 = same_number_of_iterations(L0, L1, SE);
+        if(check2){
+          outs() << "Check 2 superato\n";
+        }
+        else{
+          outs() << "Check 2 non superato\n";
+        }
+        printSeparator();
+
       }
       else{
         outs() << "Check 3 NON superato\n";

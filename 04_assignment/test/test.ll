@@ -36,29 +36,32 @@ define dso_local void @_Z4testii(i32 noundef %0, i32 noundef %1) #0 {
   br label %18
 
 18:                                               ; preds = %17, %2
-  %19 = load i32, ptr %3, align 4
-  %20 = icmp sgt i32 %19, 5
-  br i1 %20, label %21, label %30
+  %19 = load i32, ptr %4, align 4
+  %20 = add nsw i32 %19, 1
+  store i32 %20, ptr %4, align 4
+  %21 = load i32, ptr %3, align 4
+  %22 = icmp sgt i32 %21, 5
+  br i1 %22, label %23, label %32
 
-21:                                               ; preds = %18
-  br label %22
+23:                                               ; preds = %18
+  br label %24
 
-22:                                               ; preds = %25, %21
-  %23 = load i32, ptr %4, align 4
-  %24 = add nsw i32 %23, 1
-  store i32 %24, ptr %4, align 4
-  br label %25
+24:                                               ; preds = %27, %23
+  %25 = load i32, ptr %4, align 4
+  %26 = add nsw i32 %25, 1
+  store i32 %26, ptr %4, align 4
+  br label %27
 
-25:                                               ; preds = %22
-  %26 = load i32, ptr %5, align 4
-  %27 = load i32, ptr %3, align 4
-  %28 = icmp slt i32 %26, %27
-  br i1 %28, label %22, label %29, !llvm.loop !8
+27:                                               ; preds = %24
+  %28 = load i32, ptr %5, align 4
+  %29 = load i32, ptr %3, align 4
+  %30 = icmp slt i32 %28, %29
+  br i1 %30, label %24, label %31, !llvm.loop !8
 
-29:                                               ; preds = %25
-  br label %30
+31:                                               ; preds = %27
+  br label %32
 
-30:                                               ; preds = %29, %18
+32:                                               ; preds = %31, %18
   ret void
 }
 
