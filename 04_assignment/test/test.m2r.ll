@@ -4,46 +4,35 @@ target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:
 target triple = "x86_64-pc-linux-gnu"
 
 ; Function Attrs: mustprogress noinline nounwind uwtable
-define dso_local void @_Z4testii(i32 noundef %0, i32 noundef %1) #0 {
-  %3 = icmp slt i32 5, %0
-  br i1 %3, label %4, label %10
+define dso_local void @_Z5test2i(i32 noundef %0) #0 {
+  br label %2
+
+2:                                                ; preds = %4, %1
+  %.02 = phi i32 [ 0, %1 ], [ %6, %4 ]
+  %.01 = phi i32 [ 2, %1 ], [ %5, %4 ]
+  %3 = icmp slt i32 %.02, 50
+  br i1 %3, label %4, label %7
 
 4:                                                ; preds = %2
-  br label %5
+  %5 = add nsw i32 %.01, 1
+  %6 = add nsw i32 %.02, 1
+  br label %2, !llvm.loop !6
 
-5:                                                ; preds = %7, %4
-  %.0 = phi i32 [ 0, %4 ], [ %6, %7 ]
-  %6 = add nsw i32 %.0, 1
-  br label %7
+7:                                                ; preds = %2
+  br label %8
 
-7:                                                ; preds = %5
-  %8 = icmp slt i32 0, %0
-  br i1 %8, label %5, label %9, !llvm.loop !6
+8:                                                ; preds = %10, %7
+  %.1 = phi i32 [ %.01, %7 ], [ %11, %10 ]
+  %.0 = phi i32 [ 0, %7 ], [ %12, %10 ]
+  %9 = icmp slt i32 %.0, 50
+  br i1 %9, label %10, label %13
 
-9:                                                ; preds = %7
-  br label %10
+10:                                               ; preds = %8
+  %11 = add nsw i32 %.1, 1
+  %12 = add nsw i32 %.0, 1
+  br label %8, !llvm.loop !8
 
-10:                                               ; preds = %9, %2
-  %11 = add nsw i32 %1, 1
-  %12 = icmp sgt i32 %0, 5
-  br i1 %12, label %13, label %19
-
-13:                                               ; preds = %10
-  br label %14
-
-14:                                               ; preds = %16, %13
-  %.01 = phi i32 [ %11, %13 ], [ %15, %16 ]
-  %15 = add nsw i32 %.01, 1
-  br label %16
-
-16:                                               ; preds = %14
-  %17 = icmp slt i32 0, %0
-  br i1 %17, label %14, label %18, !llvm.loop !8
-
-18:                                               ; preds = %16
-  br label %19
-
-19:                                               ; preds = %18, %10
+13:                                               ; preds = %8
   ret void
 }
 

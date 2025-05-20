@@ -4,64 +4,49 @@ target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:
 target triple = "x86_64-pc-linux-gnu"
 
 ; Function Attrs: mustprogress noinline nounwind uwtable
-define dso_local void @_Z4testii(i32 noundef %0, i32 noundef %1) #0 {
+define dso_local void @_Z5test2i(i32 noundef %0) #0 {
+  %2 = alloca i32, align 4
   %3 = alloca i32, align 4
   %4 = alloca i32, align 4
   %5 = alloca i32, align 4
-  %6 = alloca i32, align 4
-  store i32 %0, ptr %3, align 4
-  store i32 %1, ptr %4, align 4
+  store i32 %0, ptr %2, align 4
+  store i32 2, ptr %3, align 4
+  store i32 0, ptr %4, align 4
+  br label %6
+
+6:                                                ; preds = %9, %1
+  %7 = load i32, ptr %4, align 4
+  %8 = icmp slt i32 %7, 50
+  br i1 %8, label %9, label %14
+
+9:                                                ; preds = %6
+  %10 = load i32, ptr %3, align 4
+  %11 = add nsw i32 %10, 1
+  store i32 %11, ptr %3, align 4
+  %12 = load i32, ptr %4, align 4
+  %13 = add nsw i32 %12, 1
+  store i32 %13, ptr %4, align 4
+  br label %6, !llvm.loop !6
+
+14:                                               ; preds = %6
   store i32 0, ptr %5, align 4
-  store i32 0, ptr %6, align 4
-  %7 = load i32, ptr %3, align 4
-  %8 = icmp slt i32 5, %7
-  br i1 %8, label %9, label %18
+  br label %15
 
-9:                                                ; preds = %2
-  br label %10
+15:                                               ; preds = %18, %14
+  %16 = load i32, ptr %5, align 4
+  %17 = icmp slt i32 %16, 50
+  br i1 %17, label %18, label %23
 
-10:                                               ; preds = %13, %9
-  %11 = load i32, ptr %6, align 4
-  %12 = add nsw i32 %11, 1
-  store i32 %12, ptr %6, align 4
-  br label %13
-
-13:                                               ; preds = %10
-  %14 = load i32, ptr %5, align 4
-  %15 = load i32, ptr %3, align 4
-  %16 = icmp slt i32 %14, %15
-  br i1 %16, label %10, label %17, !llvm.loop !6
-
-17:                                               ; preds = %13
-  br label %18
-
-18:                                               ; preds = %17, %2
-  %19 = load i32, ptr %4, align 4
+18:                                               ; preds = %15
+  %19 = load i32, ptr %3, align 4
   %20 = add nsw i32 %19, 1
-  store i32 %20, ptr %4, align 4
-  %21 = load i32, ptr %3, align 4
-  %22 = icmp sgt i32 %21, 5
-  br i1 %22, label %23, label %32
+  store i32 %20, ptr %3, align 4
+  %21 = load i32, ptr %5, align 4
+  %22 = add nsw i32 %21, 1
+  store i32 %22, ptr %5, align 4
+  br label %15, !llvm.loop !8
 
-23:                                               ; preds = %18
-  br label %24
-
-24:                                               ; preds = %27, %23
-  %25 = load i32, ptr %4, align 4
-  %26 = add nsw i32 %25, 1
-  store i32 %26, ptr %4, align 4
-  br label %27
-
-27:                                               ; preds = %24
-  %28 = load i32, ptr %5, align 4
-  %29 = load i32, ptr %3, align 4
-  %30 = icmp slt i32 %28, %29
-  br i1 %30, label %24, label %31, !llvm.loop !8
-
-31:                                               ; preds = %27
-  br label %32
-
-32:                                               ; preds = %31, %18
+23:                                               ; preds = %15
   ret void
 }
 

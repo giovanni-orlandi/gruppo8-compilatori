@@ -1,6 +1,12 @@
 
 using namespace llvm;
 
+enum AdjacencyStatus {
+  NotAdjacent = 0,
+  GuardedAdjacent = 1,
+  UnguardedAdjacent = 2
+};
+
 Loop *L = nullptr;
 
 // Utility: controlla se un elemento è nel vettore
@@ -9,7 +15,7 @@ bool is_in_container(const Container& container, const Element& elem) {
     return std::find(container.begin(), container.end(), elem) != container.end();
 }
 
-
+// Utility: serve per stampare delle linee separatrici
 void printSeparator(StringRef label="", unsigned width = 60) {
   outs().changeColor(raw_ostream::YELLOW, true);
   if (label.empty()) {
@@ -21,22 +27,15 @@ void printSeparator(StringRef label="", unsigned width = 60) {
   outs().resetColor();
 }
 
+/*
+Funzione che usiamo nel check1 per controllare l'uguaglianza delle due
+espressioni nel caso di due loop guarded
+*/
 bool AreEquivalentComparisons(Value* expr0, Value* expr1) {
   ICmpInst* cmp1 = dyn_cast<ICmpInst>(expr0);
   ICmpInst* cmp2 = dyn_cast<ICmpInst>(expr1);
   // Check that both are comparisons
   if (!cmp1 || !cmp2) {
-
-    // BranchInst* b0 = dyn_cast<BranchInst>(expr0);
-    // BranchInst* b1 = dyn_cast<BranchInst>(expr1);
-    // if (b0 || b1){
-    //   Value* expr0 = b0->getCondition();
-    //   Value* expr1 = b1->getCondition();
-    //   outs() << "QUA\n";
-    //   if (AreEquivalentComparisons(expr0, expr1)){
-    //     return true;
-    //   }
-    // }
     return false;
   }
   // Types must match
@@ -67,168 +66,151 @@ bool AreEquivalentComparisons(Value* expr0, Value* expr1) {
   return false;
 }
 
-bool clear_intermediate_bb(BasicBlock* bb, bool is_guarded){
+/**
+Funzione che controlla che, il blocco che collega i due loop non contenga in mezzo altre istruzioni. 
+Distinguiamo due casi: 
+- Se stiamo parlando di due loop guarded dobbiamo avere esattamente 1 branch e 1 compare
+- In caso di due loop non guarded dobbiamo avere esattamente 1 branch
+ */
+bool clear_intermediate_bb(BasicBlock* bb, bool is_guarded) {
+  int branch_count = 0;
+  int icmp_count = 0;
+
   for (Instruction &I : *bb) {
-    outs() << I << "\n";
-    if(is_guarded){
-      if(!(isa<BranchInst>(&I) || isa<ICmpInst>(&I))){
-        return false;
-      }
+    if (isa<BranchInst>(I)) {
+      branch_count++;
+    } else if (isa<ICmpInst>(I)) {
+      icmp_count++;
+    } else{
+      return false;
     }
-    else{
-      if(!isa<BranchInst>(&I)){
-        return false;
-      }
-    }
-}
-return true;
+  }
+
+  if (is_guarded)
+    return branch_count == 1 && icmp_count == 1;
+  else
+    return branch_count == 1 && icmp_count == 0;
 }
 
 /*
-Controllo 1: adiacenza
+Check 1: adiacenza
 Ritorna 0 se non sono adiacenti, 1 se sono adiacenti caso guarded, 2 se sono adiacenti caso non guarded
 */
-int are_adjacent(Loop* L0, Loop* L1){
+AdjacencyStatus are_adjacent(Loop* L0, Loop* L1) {
   bool L0_guarded = L0->isGuarded();
   bool L1_guarded = L1->isGuarded();
 
-  
-  printSeparator("CONTROLLO GUARDIE"); 
-  outs() << "L0: " << L0_guarded << "\n";
-  outs() << "L1: " << L1_guarded << "\n";
-  
-  // Caso in cui entrambi i loop sono guarded
-  if (L0_guarded && L1_guarded){
-    outs() << "L0 and L1 guarded\n";
+  outs() << "\tL0_guarded: " << L0_guarded << "\n";
+  outs() << "\tL1_guarded: " << L1_guarded << "\n";
 
-    // Ricavo le istruzioni di guardia
+  // --- CASO 1: Entrambi guarded ---
+  if (L0_guarded && L1_guarded) {
+    outs() << "\t[✓] Entrambi i loop sono guarded\n";
+
     BranchInst* guard0 = L0->getLoopGuardBranch();
     BranchInst* guard1 = L1->getLoopGuardBranch();
-    
-    outs() << "Guard0 " << *guard0 << "\n";
-    outs() << "Guard1 " << *guard1 << "\n";
 
-    // Mi faccio ritornare l'entry bb del secondo loop (loop1)
+    if (!guard0 || !guard1) {
+      outs() << "\t[X] Una delle guardie è null\n";
+      return NotAdjacent;
+    }
+
     BasicBlock* entry1 = guard1->getParent();
-
-    // BasicBlock* trueDest0 = guard0->getSuccessor(0);
-    // BasicBlock* falseDest0 = guard0->getSuccessor(1);
-    
-    // BasicBlock* out_guard0 = nullptr;
-
-    // Mi ricavo il basic block fuori dal loop 0 a cui punta la guard0
-    BasicBlock* out_guard0 = guard0->getSuccessor(1);
-
-    // bool is_out_first0 = false;
-
-    // if (L0->contains(trueDest0)){
-    //   out_guard0 = falseDest0;
-
-    // }
-    // else if(L0->contains(falseDest0)){
-    //   out_guard0 = trueDest0;
-    //   is_out_first0 = true;
-    // }
+    BasicBlock* out_guard0 = guard0->getSuccessor(1); // ipotizziamo true = dentro, false = fuori
 
 
-    if(out_guard0 == entry1){
-    printSeparator("EXIT DI GUARD0 FUORI DAL LOOP0 PUNTA ALL'ENTRY DEL LOOP1");
-      if(!clear_intermediate_bb(out_guard0, true)){
-        outs() << "Ci sono istruzioni in mezzo\n";
-        return 0;
-      }
-      outs() << "BB0: " << *out_guard0 << "\n";
-      outs() << "BB1: " << *entry1 << "\n";
-      // outs() << "Output block della guardia 0 e' l'entry block del loop 1\n";
-
-
-      // Mi ricavo le due condizioni che controlla la guard
-      Value* expr0 = guard0->getCondition();
-      Value* expr1 = guard1->getCondition();
-
-      outs() << "Condizione 0: " << *expr0 << "\n";
-      outs() << "Condizione 1: " << *expr1 << "\n";
-
-      bool same_expr = AreEquivalentComparisons(expr0,expr1);
-      if(same_expr){
-        outs() << "Le condizioni delle due guardie sono uguali\n";
-      }
-      else{
-        outs() << "Le condizioni delle due guardie sono diverse\n";
-        return 0;
-      }
-
-      // Controllo condizione uguale
-
-      // BasicBlock* trueDest1 = guard1->getSuccessor(0);
-      // BasicBlock* falseDest1 = guard1->getSuccessor(1);
-      
-      // bool is_out_first1 = false;
-      // if (L1->contains(trueDest1)){
-        
-      // }
-      // if(L1->contains(falseDest1)){
-        // is_out_first1 = true;
-      // }
-      // bool inverted = true;
-      // if (is_out_first1 == is_out_first0){
-          // inverted = false;
-      // }
-      return 1;
-
+    if (out_guard0 != entry1) {
+      outs() << "\t[X] La guardia di L0 non punta all'entry di L1\n";
+      return NotAdjacent;
     }
-    return 0;
+    outs() << "\t[✓] La guardia di L0 punta all'entry di L1\n";
+    bool is_guarded = true;
+    if (!clear_intermediate_bb(out_guard0, is_guarded)) {
+      outs() << "\t[X] Il blocco intermedio non è pulito\n";
+      return NotAdjacent;
+    }
 
+    Value* expr0 = guard0->getCondition();
+    Value* expr1 = guard1->getCondition();
+
+    outs() << "\tCondizione guard0: " << *expr0 << "\n";
+    outs() << "\tCondizione guard1: " << *expr1 << "\n";
+
+    if (AreEquivalentComparisons(expr0, expr1)) {
+      outs() << "\t[✓] Le condizioni di guardia sono equivalenti\n";
+      return GuardedAdjacent;
+    } else {
+      outs() << "\t[X] Le condizioni di guardia sono diverse\n";
+      return NotAdjacent;
+    }
   }
 
-  else if(!L0_guarded && !L1_guarded){
-    outs() << "L0 and L1 NOT guarded\n";
-    BasicBlock* ExitL0 = L0->getExitBlock();
-    BasicBlock* PreHeaderL1 = L1->getLoopPreheader();
-    outs() << *ExitL0 << "\n";
-    outs() << *PreHeaderL1 << "\n";
-    if(clear_intermediate_bb(PreHeaderL1, false)){
-      if(ExitL0 == PreHeaderL1){
-        return 2;
-      }
+  // --- CASO 2: Entrambi non guarded ---
+  if (!L0_guarded && !L1_guarded) {
+    outs() << "\t[✓] Entrambi i loop NON sono guarded\n";
+
+    BasicBlock* exitL0 = L0->getExitBlock();
+    BasicBlock* preheaderL1 = L1->getLoopPreheader();
+
+    if (!exitL0 || !preheaderL1) {
+      outs() << "\t[X] Exit o preheader è null\n";
+      return NotAdjacent;
     }
-    return 0;
+
+    outs() << "\tExit L0: " << exitL0->getName() << "\n";
+    outs() << "\tPreheader L1: " << preheaderL1->getName() << "\n";
+
+    bool is_guarded = false;
+    if (exitL0 == preheaderL1 && clear_intermediate_bb(preheaderL1, is_guarded)) {
+      return UnguardedAdjacent;
+    }
+
+    outs() << "\t[X] I blocchi non coincidono o contengono istruzioni non valide\n";
+    return NotAdjacent;
   }
-  return 0;
+
+  // --- CASO 3: Uno guarded, l’altro no ---
+  outs() << "\t[X] Un solo loop è guarded: caso non valido per adiacenza\n";
+  return NotAdjacent;
 }
 
-bool are_cf_equivalent(Loop* L0, Loop* L1, DominatorTree& DT, PostDominatorTree& PDT, int check1){
-  printSeparator("Check3");
+/*
+Check 3: cf equivalenza
+Prima ricaviamo i due BB su cui verificare la condizione in questi due casi: 
+- se stiamo facendo i controlli con due loop guarded allora le condizioni di dom e postdom le controllo
+  su i BB che contengono le guard
+- se siamo nel caso di due loop non guarded, le condizioni di dom e postdom le controllo sui Preheader
+Successivamente, controlliamo che il blocco selezionato del loop0 domini il loop1 e viceversa per la postdominanza.
+*/
+bool are_cf_equivalent(Loop* L0, Loop* L1, DominatorTree& DT, PostDominatorTree& PDT, AdjacencyStatus status){
   BasicBlock *B0 = nullptr;
   BasicBlock *B1 = nullptr;
   
-  if(check1 == 2){ 
+  if(status == UnguardedAdjacent){ 
     B0 = L0->getLoopPreheader();
     B1 = L1->getLoopPreheader();
   }
-  else if(check1 == 1){ // Caso in cui devo controllare se sono cf equivalenti e sono guarded
+  else if(status == GuardedAdjacent){ // Caso in cui devo controllare se sono cf equivalenti e sono guarded
     B0 = L0->getLoopGuardBranch()->getParent();
     B1 = L1->getLoopGuardBranch()->getParent();
   }
+
+  // Controllo per sicurezza
+  if(!B0 || !B1) return false;
 
   //Check sulla dominanza L0->L1
   bool L0_dom_L1 = false;
   DomTreeNode *LI_Node = DT.getNode(B0);
   for (auto *DTN : breadth_first(LI_Node)) {
-    // outs() << "inizio loop\n";
     if (DTN->getBlock() == nullptr) continue;
-    // outs() << "continua...\n";
     BasicBlock* curr_block = DTN->getBlock();
-    outs() << *curr_block << "\n";
     if (curr_block == B1){
-      outs() << "Dominanza okay\n";
       L0_dom_L1 = true;
       break;
     }
   }
 
   bool L1_postdom_L0 = false;
-
   //Check sulla postdominanza L1->L0
   auto* LI1_Node = PDT.getNode(B1);
   for (auto *PDTN : breadth_first(LI1_Node)) {
@@ -239,18 +221,19 @@ bool are_cf_equivalent(Loop* L0, Loop* L1, DominatorTree& DT, PostDominatorTree&
       break;
     }
   }
-
   return L0_dom_L1 && L1_postdom_L0;
 
 }
 
 
+/*
+Check 2: WIP
+*/
 bool same_number_of_iterations(Loop* L0, Loop *L1, ScalarEvolution &SE){
-  printSeparator("CHECK 2");
   auto *TripCount0 = SE.getBackedgeTakenCount(L0);
   auto *TripCount1 = SE.getBackedgeTakenCount(L1);
-  outs() << "TC0: " << *TripCount0 << "\n";
-  outs() << "TC1: " << *TripCount1 << "\n";
+  outs() << "\tTC0: " << *TripCount0 << "\n";
+  outs() << "\tTC1: " << *TripCount1 << "\n";
   if(TripCount0 == TripCount1){
     return true;
   }
@@ -262,49 +245,53 @@ bool same_number_of_iterations(Loop* L0, Loop *L1, ScalarEvolution &SE){
 Funzione da cui parte l'analisi, chiama le varie funzioni ausiliarie per i task e passi dell'algoritmo.
 */
 bool analyze_loop(LoopInfo &LI, DominatorTree& DT, PostDominatorTree& PDT, ScalarEvolution &SE) {
-  // outs() << "here2\n";
   bool modified = false;
-
-
   SmallVector<Loop *, 8> Worklist;
-  for (Loop *TopLevelLoop : LI){
-    printSeparator();
-    outs() << "L: " << *(TopLevelLoop->getHeader()) << "\n";
-    printSeparator();
 
-    for (Loop *L : depth_first(TopLevelLoop)){
-      if (L->isInnermost()){ 
+  printSeparator("Stampa dei loop");
+  for (Loop *TopLevelLoop : LI) {
+    for (Loop *L : depth_first(TopLevelLoop)) {
+      if (L->isInnermost() && L->isLoopSimplifyForm()) {
         Worklist.push_back(L);
+        outs() << "L: " << *(L->getHeader()) << "\n";
       }
     }
   }
-  for(int i = Worklist.size() - 1; i >= 1; i--){
+
+  printSeparator("Inizio ottimizzazione Loop Fusion");
+
+  for (int i = Worklist.size() - 1; i >= 1; i--) {
     Loop* L0 = Worklist[i];
-    Loop* L1 = Worklist[i-1];  
-    int check1 = are_adjacent(L0, L1);
-    if(check1){
-      outs() << "Check 1 passato per i due loop L" << i << " e L" << i+1 << "\n"; 
-      bool check3 = are_cf_equivalent(L0, L1, DT, PDT, check1);
-      if(check3){
-        outs() << "Check 3 superato\n";
-        bool check2 = same_number_of_iterations(L0, L1, SE);
-        if(check2){
-          outs() << "Check 2 superato\n";
-        }
-        else{
-          outs() << "Check 2 non superato\n";
-        }
-        printSeparator();
+    Loop* L1 = Worklist[i - 1];
 
+    outs() << "Analisi della coppia L" << i << " e L" << (i - 1) << "\n";
+
+    printSeparator("Check 1: Adiacenza");
+    AdjacencyStatus adj_status = are_adjacent(L0, L1);
+
+    if (adj_status != NotAdjacent) {
+      outs() << "[✓] Check 1 superato: loop adiacenti\n";
+
+      printSeparator("Check 3: Equivalenza di controllo di flusso");
+      if (are_cf_equivalent(L0, L1, DT, PDT, adj_status)) {
+        outs() << "[✓] Check 3 superato: equivalenza CF\n";
+
+        printSeparator("Check 2: Uguaglianza del numero di iterazioni");
+        if (same_number_of_iterations(L0, L1, SE)) {
+          outs() << "[✓] Check 2 superato: numero di iterazioni uguale\n";
+          modified = true;
+        } else {
+          outs() << "[X] Check 2 non superato\n";
+        }
+
+      } else {
+        outs() << "[X] Check 3 non superato\n";
       }
-      else{
-        outs() << "Check 3 NON superato\n";
-      }
-    }
-    else{
-      outs() << "Check 1 non passato!\n";
+
+    } else {
+      outs() << "[X] Check 1 non superato: loop non adiacenti\n";
     }
   }
-  return modified;  // Restituisci false se la funzione non ha modificato IR
+  printSeparator("Fine ottimizzazione Loop Fusion");
+  return modified;
 }
-
