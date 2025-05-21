@@ -10,6 +10,7 @@
 #include "llvm/ADT/BreadthFirstIterator.h"
 
 #include "llvm/Analysis/ScalarEvolution.h"
+#include "llvm/Analysis/DependenceAnalysis.h"
 
 #include "loop_fusion.cpp"
 
@@ -32,8 +33,9 @@ struct LFOpt : PassInfoMixin<LFOpt> {
     PostDominatorTree &PDT = AM.getResult<PostDominatorTreeAnalysis>(F);
 
     ScalarEvolution &SE = AM.getResult<ScalarEvolutionAnalysis>(F);
+    DependenceInfo &DI = AM.getResult<DependenceAnalysis>(F);
 
-    modified = analyze_loop(LI, DT, PDT, SE);
+    modified = analyze_loop(LI, DT, PDT, SE, DI);
 
     return modified ? PreservedAnalyses::none() : PreservedAnalyses::all();
     

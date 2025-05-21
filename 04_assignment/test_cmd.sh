@@ -11,7 +11,7 @@ FILE="$1"
 BASENAME="${FILE%.*}"  # rimuove .cpp
 
 # Compila in LLVM IR (.ll)
-clang++ -Xclang -disable-O0-optnone -O0 -S -emit-llvm "$FILE" -o "$BASENAME.ll" || exit 1
+clang -Xclang -disable-O0-optnone -O0 -S -emit-llvm "$FILE" -o "$BASENAME.ll" || exit 1
 
 # Applica mem2reg
 opt -S -p mem2reg "$BASENAME.ll" -o "$BASENAME.m2r.ll" || exit 1

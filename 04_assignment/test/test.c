@@ -64,16 +64,36 @@
 // }
 
 
-void test2(int n){
-    int x = 2;
-    int i = 0;
-    while(i < 50){
-        x++;
-        i++;
-    }
+// void test2(int n){
+//     int x = 2;
+//     int i = 0;
+//     while(i < 50){
+//         x++;
+//         i++;
+//     }
+//     int j = 0;
+//     while(j < 50){
+//         x++;
+//         j++;
+//     }
+// }
+
+void testarray(int n){
+    int arr[2*n];
+    int arr1[2*n];
+
+    int i = 0;  
     int j = 0;
-    while(j < 50){
-        x++;
-        j++;
-    }
+    do{
+    i++;
+
+    arr[i] = 3;
+    } while(i<n);
+    
+    i=0;
+    do{
+        arr1[i] = arr[j*4];
+        j += 2;
+        i++;
+    } while(i<n);
 }

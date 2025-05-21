@@ -240,11 +240,102 @@ bool same_number_of_iterations(Loop* L0, Loop *L1, ScalarEvolution &SE){
   return false;
 }
 
+/*
+Check 4: Negative Depentencies
+*/
+
+bool no_negative_dependencies(Loop* L0, Loop *L1, DependenceInfo &DI, ScalarEvolution &SE){
+  std::vector<Instruction*> L0_instructions;
+  std::vector<Instruction*> L1_instructions;
+
+  outs() << "\tL0 instructions:\n";
+  for (BasicBlock *BB : L0->getBlocks()) {
+    for (Instruction &I : *BB) {
+      if(isa<GetElementPtrInst>(I)){
+      L0_instructions.push_back(&I);
+      outs()<< *I.getOperand(0) << "\n";
+      }
+    }
+  }
+
+  outs() << "\tL1 instructions:\n";
+  for (BasicBlock *BB : L1->getBlocks()) {
+    for (Instruction &I : *BB) {
+      if(isa<GetElementPtrInst>(I)){
+      L1_instructions.push_back(&I);
+      outs()<< *I.getOperand(0) << "\n";
+
+      }
+    }
+  }
+  outs() << "\tL0 instructions: " << L0_instructions.size() << "\n";
+  outs() << "\tL1 instructions: " << L1_instructions.size() << "\n";
+
+  for (auto *I0 : L0_instructions) {
+    for (auto *I1 : L1_instructions) {
+      if(I0->getOperand(0) == I1->getOperand(0)){
+        //outs() << "\t[X] Trovata dipendenza negativa tra " << *I0 << " e " << *I1 << "\n";
+        auto dep = DI.depends(I0, I1, true);
+        if(!dep){
+          outs() << "\t[X] Trovata dipendenza " << *I0 << " e " << *I1 << "\n";
+          auto DepOp0 = dyn_cast<Instruction>(I0->getOperand(1))->getOperand(0);
+          auto DepOp1 = dyn_cast<Instruction>(I1->getOperand(1))->getOperand(0);
+
+          outs() << "Operandi...\n\t\t" << *DepOp0 << "\n\t\t" << *DepOp1 << "\n";
+          printSeparator();
+          // const SCEV *Trip0 = SE.getSCEV(DepOp0);
+          // const SCEV *Trip1 = SE.getSCEV(DepOp1);
+          // outs() << "Tripla 1: "<< *Trip0->getStart()<<"\n";
+          // outs() << "Tripla 2: "<< *Trip1->getStart()<<"\n";
+          const SCEVAddRecExpr *Trip0 = dyn_cast<SCEVAddRecExpr>(SE.getSCEV(DepOp0));
+          const SCEVAddRecExpr *Trip1 = dyn_cast<SCEVAddRecExpr>(SE.getSCEV(DepOp1));
+
+          if (Trip0 && Trip1) {
+              const SCEV *Start0 = Trip0->getStart();
+              const SCEV *Start1 = Trip1->getStart();
+
+              outs() << "Tripla 1: " << *Trip0 << "\n";
+              outs() << "Tripla 2: " << *Trip1 << "\n";
+
+              outs() << "Start 1: " << *Start0 << "\n";
+              outs() << "Start 2: " << *Start1 << "\n";
+
+              outs() << "Increment 1: " << *Trip0->getStepRecurrence(SE) << "\n";
+              outs() << "Increment 2: " << *Trip1->getStepRecurrence(SE) << "\n";
+
+              const SCEVConstant *Const0 = dyn_cast<SCEVConstant>(Start0);
+              const SCEVConstant *Const1 = dyn_cast<SCEVConstant>(Start1);
+
+              if (Const0 && Const1) {
+                  const llvm::APInt &Val0 = Const0->getAPInt();
+                  const llvm::APInt &Val1 = Const1->getAPInt();
+
+                  if (Val0.slt(Val1)) {
+                      outs() << "Start del secondo loop maggiore del primo\n";
+                  }
+              } else {
+                  outs() << "Una delle start non è una costante SCEV\n";
+              }
+          } else {
+              outs() << "Almeno una delle due non è una SCEVAddRecExpr\n";
+          }
+         
+        }
+        // else{
+        //   outs() << "\t[✓] Nessuna dipendenza negativa tra " << *I0 << " e " << *I1 << "\n";
+        // }
+
+      }
+    }
+  }
+
+  return false;
+}
 
 /*
 Funzione da cui parte l'analisi, chiama le varie funzioni ausiliarie per i task e passi dell'algoritmo.
 */
-bool analyze_loop(LoopInfo &LI, DominatorTree& DT, PostDominatorTree& PDT, ScalarEvolution &SE) {
+bool analyze_loop(LoopInfo &LI, DominatorTree& DT, PostDominatorTree& PDT, ScalarEvolution &SE, DependenceInfo &DI) {
   bool modified = false;
   SmallVector<Loop *, 8> Worklist;
 
@@ -279,7 +370,15 @@ bool analyze_loop(LoopInfo &LI, DominatorTree& DT, PostDominatorTree& PDT, Scala
         printSeparator("Check 2: Uguaglianza del numero di iterazioni");
         if (same_number_of_iterations(L0, L1, SE)) {
           outs() << "[✓] Check 2 superato: numero di iterazioni uguale\n";
-          modified = true;
+        
+          printSeparator("Check 4: Controllo dipendenze negative");
+          if(no_negative_dependencies(L0, L1, DI, SE)){
+            outs() << "[✓] Check 4 superato\n";
+            modified = true;
+          } else {
+            outs() << "[X] Check 4 non superato\n";
+          }
+
         } else {
           outs() << "[X] Check 2 non superato\n";
         }
