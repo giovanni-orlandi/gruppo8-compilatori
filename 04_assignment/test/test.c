@@ -79,21 +79,23 @@
 // }
 
 void testarray(int n){
-    int arr[2*n];
-    int arr1[2*n];
-
+    // int arr[2*n];
+    // int arr1[2*n];
+    int a1,a2,a3;
     int i = 0;  
     int j = 0;
     do{
-    i++;
-
-    arr[i] = 3;
-    } while(i<n);
-    
-    i=0;
-    do{
-        arr1[i] = arr[j*4];
-        j += 2;
+        // a1 = arr[i];
+        a1 = 3*i;
         i++;
+
+    } while(i<n);
+    i = 0;
+    do{
+        a2 = 3*i;
+        // arr[i] = 2;
+        i++;
+
+
     } while(i<n);
 }

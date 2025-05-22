@@ -240,20 +240,121 @@ bool same_number_of_iterations(Loop* L0, Loop *L1, ScalarEvolution &SE){
   return false;
 }
 
+
+bool check_neg_dep(std::vector<Instruction*> L0_instr, std::vector<Instruction*> L1_instr, DependenceInfo &DI, ScalarEvolution &SE, int direction){
+  for (auto *I0 : L0_instr) {
+    for (auto *I1 : L1_instr) {
+      // if(I0->getOperand(0) == I1->getOperand(0)){
+        std::unique_ptr<Dependence> dep = DI.depends(I0, I1, true);
+        if(dep){
+            outs() << "[X] Trovata possibile dipendenza tra " << *I0 << " e " << *I1 << "\n";
+
+            // outs() << *I0 << "\n";
+            // outs() << *I1 << "\n";
+
+            // outs() << *I0->getOperand(1) << "\n";
+            // outs() << *I1->getOperand(0) << "\n";
+
+            GetElementPtrInst *ptr0 = dyn_cast<GetElementPtrInst>(I0->getOperand(1-direction));
+            GetElementPtrInst *ptr1 = dyn_cast<GetElementPtrInst>(I1->getOperand(direction));
+            outs() << "ptr0: " << *ptr0 << "\n... e ptr1: " << *ptr1 << "\n";
+
+            auto DepOp0 = dyn_cast<Instruction>(ptr0->getOperand(1))->getOperand(0);
+            auto DepOp1 = dyn_cast<Instruction>(ptr1->getOperand(1))->getOperand(0);
+
+            outs() << "Operandi...\n\t\t" << *DepOp0 << "\n\t\t" << *DepOp1 << "\n";
+            printSeparator();
+
+            const SCEVAddRecExpr *Trip0 = dyn_cast<SCEVAddRecExpr>(SE.getSCEV(DepOp0));
+            const SCEVAddRecExpr *Trip1 = dyn_cast<SCEVAddRecExpr>(SE.getSCEV(DepOp1));
+
+            if (Trip0 && Trip1) {
+                const SCEV *Start0 = Trip0->getStart();
+                const SCEV *Start1 = Trip1->getStart();
+
+                outs() << "Tripla 1: " << *Trip0 << "\n";
+                outs() << "Tripla 2: " << *Trip1 << "\n";
+
+                outs() << "Start 1: " << *Start0 << "\n";
+                outs() << "Start 2: " << *Start1 << "\n";
+
+
+                const SCEVConstant *StartConst0 = dyn_cast<SCEVConstant>(Start0);
+                const SCEVConstant *StartConst1 = dyn_cast<SCEVConstant>(Start1);
+
+                if (StartConst0 && StartConst1) {
+                    const llvm::APInt &Val0 = StartConst0->getAPInt();
+                    const llvm::APInt &Val1 = StartConst1->getAPInt();
+
+                    if (Val0.slt(Val1)) {
+                        outs() << "Start del secondo loop maggiore del primo\n";
+                        return false;
+                    }
+                    else{
+                      outs() << "Okay, start del secondo loop minore del secondo, controlliamo il passo...\n";
+                      const SCEV *Increment0 = Trip0->getStepRecurrence(SE);
+                      const SCEV *Increment1 = Trip1->getStepRecurrence(SE);
+                      outs() << "Increment 1: " << *Increment0 << "\n";
+                      outs() << "Increment 2: " << *Increment1 << "\n";
+                      const SCEVConstant *IncrementConst0 = dyn_cast<SCEVConstant>(Increment0);
+                      const SCEVConstant *IncrementConst1 = dyn_cast<SCEVConstant>(Increment1);
+                      if (IncrementConst0 && IncrementConst1) {
+                        const llvm::APInt &Val0 = IncrementConst0->getAPInt();
+                        const llvm::APInt &Val1 = IncrementConst1->getAPInt();
+                        // outs() << "val0 " << Val0 << "\n";
+                        // outs() << "val1 " << Val1 << "\n";
+                        if (Val0.slt(Val1)) {
+                            outs() << "Increment del secondo loop maggiore del primo\n";
+                            return false;
+                        }
+                        else{
+                          outs() << "anche controllo su incremento passato\n";
+                          return true;
+                        }
+                      }
+                    }
+                } else {
+                    outs() << "Una delle start non è una costante SCEV\n";
+                    return false;
+                }
+            } else {
+                outs() << "Almeno una delle due non è una SCEVAddRecExpr\n";
+                return false;
+            }
+        }
+        else{
+          outs() << "\t[✓] Nessuna dipendenza negativa tra " << *I0 << " e " << *I1 << "\n";
+          return true;
+        }
+
+    }
+  }
+  return false;
+}
+
 /*
 Check 4: Negative Depentencies
 */
-
 bool no_negative_dependencies(Loop* L0, Loop *L1, DependenceInfo &DI, ScalarEvolution &SE){
-  std::vector<Instruction*> L0_instructions;
-  std::vector<Instruction*> L1_instructions;
+  std::vector<Instruction*> L0_store_instructions;
+  std::vector<Instruction*> L1_load_instructions;
+
+
+  std::vector<Instruction*> L1_store_instructions;
+  std::vector<Instruction*> L0_load_instructions;
 
   outs() << "\tL0 instructions:\n";
   for (BasicBlock *BB : L0->getBlocks()) {
     for (Instruction &I : *BB) {
-      if(isa<GetElementPtrInst>(I)){
-      L0_instructions.push_back(&I);
-      outs()<< *I.getOperand(0) << "\n";
+      if(isa<StoreInst>(I)){
+        // GetElementPtrInst *ptr = dyn_cast<GetElementPtrInst>(I.getOperand(1));
+        L0_store_instructions.push_back(&I);
+        outs()<< "Store: " << I << "\n";
+      }
+      if(isa<LoadInst>(I)){
+        // GetElementPtrInst *ptr = dyn_cast<GetElementPtrInst>(I.getOperand(0));
+        L0_load_instructions.push_back(&I);
+        outs()<< "Load: " << I << "\n";      
       }
     }
   }
@@ -261,75 +362,51 @@ bool no_negative_dependencies(Loop* L0, Loop *L1, DependenceInfo &DI, ScalarEvol
   outs() << "\tL1 instructions:\n";
   for (BasicBlock *BB : L1->getBlocks()) {
     for (Instruction &I : *BB) {
-      if(isa<GetElementPtrInst>(I)){
-      L1_instructions.push_back(&I);
-      outs()<< *I.getOperand(0) << "\n";
-
+      if(isa<LoadInst>(I)){
+        // GetElementPtrInst *ptr = dyn_cast<GetElementPtrInst>(I.getOperand(0));
+        L1_load_instructions.push_back(&I);
+        outs()<< "Load: " << I << "\n";
       }
-    }
-  }
-  outs() << "\tL0 instructions: " << L0_instructions.size() << "\n";
-  outs() << "\tL1 instructions: " << L1_instructions.size() << "\n";
-
-  for (auto *I0 : L0_instructions) {
-    for (auto *I1 : L1_instructions) {
-      if(I0->getOperand(0) == I1->getOperand(0)){
-        //outs() << "\t[X] Trovata dipendenza negativa tra " << *I0 << " e " << *I1 << "\n";
-        auto dep = DI.depends(I0, I1, true);
-        if(!dep){
-          outs() << "\t[X] Trovata dipendenza " << *I0 << " e " << *I1 << "\n";
-          auto DepOp0 = dyn_cast<Instruction>(I0->getOperand(1))->getOperand(0);
-          auto DepOp1 = dyn_cast<Instruction>(I1->getOperand(1))->getOperand(0);
-
-          outs() << "Operandi...\n\t\t" << *DepOp0 << "\n\t\t" << *DepOp1 << "\n";
-          printSeparator();
-          // const SCEV *Trip0 = SE.getSCEV(DepOp0);
-          // const SCEV *Trip1 = SE.getSCEV(DepOp1);
-          // outs() << "Tripla 1: "<< *Trip0->getStart()<<"\n";
-          // outs() << "Tripla 2: "<< *Trip1->getStart()<<"\n";
-          const SCEVAddRecExpr *Trip0 = dyn_cast<SCEVAddRecExpr>(SE.getSCEV(DepOp0));
-          const SCEVAddRecExpr *Trip1 = dyn_cast<SCEVAddRecExpr>(SE.getSCEV(DepOp1));
-
-          if (Trip0 && Trip1) {
-              const SCEV *Start0 = Trip0->getStart();
-              const SCEV *Start1 = Trip1->getStart();
-
-              outs() << "Tripla 1: " << *Trip0 << "\n";
-              outs() << "Tripla 2: " << *Trip1 << "\n";
-
-              outs() << "Start 1: " << *Start0 << "\n";
-              outs() << "Start 2: " << *Start1 << "\n";
-
-              outs() << "Increment 1: " << *Trip0->getStepRecurrence(SE) << "\n";
-              outs() << "Increment 2: " << *Trip1->getStepRecurrence(SE) << "\n";
-
-              const SCEVConstant *Const0 = dyn_cast<SCEVConstant>(Start0);
-              const SCEVConstant *Const1 = dyn_cast<SCEVConstant>(Start1);
-
-              if (Const0 && Const1) {
-                  const llvm::APInt &Val0 = Const0->getAPInt();
-                  const llvm::APInt &Val1 = Const1->getAPInt();
-
-                  if (Val0.slt(Val1)) {
-                      outs() << "Start del secondo loop maggiore del primo\n";
-                  }
-              } else {
-                  outs() << "Una delle start non è una costante SCEV\n";
-              }
-          } else {
-              outs() << "Almeno una delle due non è una SCEVAddRecExpr\n";
-          }
-         
-        }
-        // else{
-        //   outs() << "\t[✓] Nessuna dipendenza negativa tra " << *I0 << " e " << *I1 << "\n";
-        // }
-
+      if(isa<StoreInst>(I)){
+        // GetElementPtrInst *ptr = dyn_cast<GetElementPtrInst>(I.getOperand(1));
+        L1_store_instructions.push_back(&I);
+        outs()<< "Store: " << I << "\n";
       }
     }
   }
 
-  return false;
+  outs() << "\tL0 store instructions: " << L0_store_instructions.size() << "\n";
+  outs() << "\tL1 load instructions: " << L1_load_instructions.size() << "\n\n";
+
+  outs() << "\tL0 load instructions: " << L0_load_instructions.size() << "\n";
+  outs() << "\tL1 store instructions: " << L1_store_instructions.size() << "\n";
+
+  outs() << "========= Fine individuazione load e store... ========\n\n";
+
+  bool neg_dep_store0_load1 = true;
+  if(L0_store_instructions.size() && L1_load_instructions.size()){
+    neg_dep_store0_load1 = check_neg_dep(L0_store_instructions, L1_load_instructions, DI, SE, 0);
+  }
+
+  bool neg_dep_store1_load0 = true;
+  if(L1_store_instructions.size() && L0_load_instructions.size()){
+    neg_dep_store1_load0 = check_neg_dep(L0_load_instructions, L1_store_instructions, DI, SE, 1);
+  }
+
+  return neg_dep_store0_load1 && neg_dep_store1_load0;
+
+}
+
+void fuse_loop(Loop* L0, Loop* L1){
+  PHINode* indVar0 = L0->getCanonicalInductionVariable();
+  PHINode* indVar1 = L1->getCanonicalInductionVariable();
+  outs() << "Ind var0 " << *indVar0 << "\n";
+  outs() << "Ind var1 " << *indVar1 << "\n";
+  indVar1->replaceAllUsesWith(indVar0);
+  indVar1->eraseFromParent();
+
+
+  return;
 }
 
 /*
@@ -374,6 +451,9 @@ bool analyze_loop(LoopInfo &LI, DominatorTree& DT, PostDominatorTree& PDT, Scala
           printSeparator("Check 4: Controllo dipendenze negative");
           if(no_negative_dependencies(L0, L1, DI, SE)){
             outs() << "[✓] Check 4 superato\n";
+            printSeparator("Tutti i check superati, procedo alla fusion");
+
+            fuse_loop(L0, L1);
             modified = true;
           } else {
             outs() << "[X] Check 4 non superato\n";
