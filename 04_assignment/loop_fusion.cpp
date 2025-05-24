@@ -1,45 +1,4 @@
-#include "llvm/Support/GraphWriter.h"
-namespace llvm {
-template <>
-struct DOTGraphTraits<const llvm::Function*> : public DefaultDOTGraphTraits {
-  DOTGraphTraits(bool isSimple = false) : DefaultDOTGraphTraits(isSimple) {}
-
-  static std::string getNodeLabel(const llvm::BasicBlock *Node, const llvm::Function *Graph) {
-    std::string Label;
-    raw_string_ostream OS(Label);
-
-    // if (!Node->getName().empty())
-    //   OS << Node->getName() << ":\l";
-    // else
-    //   OS << "<anon>:\l";
-
-    for (const auto &Inst : *Node) {
-
-      OS << Inst << "\n";
-    }
-
-    return OS.str();
-  }
-};
-} // namespace llvm
-
-//dot -Tpng dotfile/cfg_loop.dot -o dotfile/cfg_loop.png
-void dumpCFGToDotFile(llvm::Function &F, const std::string &Filename) {
-  std::error_code EC;
-  llvm::raw_fd_ostream File(Filename, EC, llvm::sys::fs::OF_Text);
-
-  if (EC) {
-    llvm::outs() << "Errore nell'apertura del file " << Filename << ": " << EC.message() << "\n";
-    return;
-  }
-
-  llvm::WriteGraph(File, (const llvm::Function *)&F);
-  llvm::outs() << "CFG scritto su: " << Filename << "\n";
-}
-
-
-
-
+#include "utility.cpp"
 
 using namespace llvm;
 
@@ -51,40 +10,23 @@ enum AdjacencyStatus {
 
 Loop *L = nullptr;
 
-// Utility: controlla se un elemento è nel vettore
-template <typename Container, typename Element>
-bool is_in_container(const Container& container, const Element& elem) {
-    return std::find(container.begin(), container.end(), elem) != container.end();
-}
 
-// Utility: serve per stampare delle linee separatrici
-void printSeparator(StringRef label="", unsigned width = 60) {
-  outs().changeColor(raw_ostream::YELLOW, true);
-  if (label.empty()) {
-      outs() << std::string(width, '-') << "\n";
-  } else {
-      unsigned pad = (width > label.size()) ? (width - label.size()) / 2 : 0;
-      outs() << std::string(pad, '-') << label << std::string(pad, '-') << "\n";
-  }
-  outs().resetColor();
-}
-
+// =========================== CHECK 1 (Adiacenza) ===============================
 /*
 Funzione che usiamo nel check1 per controllare l'uguaglianza delle due
-espressioni nel caso di due loop guarded
+espressioni contenute nelle guardie, nel caso 1 (quello appunto con due loop guarded)
 */
 bool AreEquivalentComparisons(Value* expr0, Value* expr1) {
   ICmpInst* cmp1 = dyn_cast<ICmpInst>(expr0);
   ICmpInst* cmp2 = dyn_cast<ICmpInst>(expr1);
-  // Check that both are comparisons
   if (!cmp1 || !cmp2) {
     return false;
   }
-  // Types must match
   if (cmp1->getOperand(0)->getType() != cmp2->getOperand(0)->getType())
       return false;
 
-  // Normalize first: get opcode, operands
+  // Ci facciamo dare il predicato e i due operandi, per non limitarci al semplice controllo sull'esattezza
+  // membro a membro
   ICmpInst::Predicate pred1 = cmp1->getPredicate();
   Value* lhs1 = cmp1->getOperand(0);
   Value* rhs1 = cmp1->getOperand(1);
@@ -93,13 +35,13 @@ bool AreEquivalentComparisons(Value* expr0, Value* expr1) {
   Value* lhs2 = cmp2->getOperand(0);
   Value* rhs2 = cmp2->getOperand(1);
 
-  // Check direct match
+  // ontrolla che sia esattamente uguale
   if (pred1 == pred2 && lhs1 == lhs2 && rhs1 == rhs2)
       return true;
 
-  // Check swapped equivalent (e.g., x < 0 == 0 > x)
+  // Controlla se sono uguali ma semplicemente invertite (es. x < 0 == 0 > x)
   if (lhs1 == rhs2 && rhs1 == lhs2) {
-      // Use LLVM's getSwappedPredicate to reverse direction
+      // Questa funzione permette di scambiare il predicato, come nell'esempio sopra
       auto swapped = ICmpInst::getSwappedPredicate(pred2);
       if (pred1 == swapped)
           return true;
@@ -109,7 +51,7 @@ bool AreEquivalentComparisons(Value* expr0, Value* expr1) {
 }
 
 /**
-Funzione che controlla che, il blocco che collega i due loop non contenga in mezzo altre istruzioni. 
+Funzione che controlla che il blocco che collega i due loop non contenga in mezzo altre istruzioni. 
 Distinguiamo due casi: 
 - Se stiamo parlando di due loop guarded dobbiamo avere esattamente 1 branch e 1 compare
 - In caso di due loop non guarded dobbiamo avere esattamente 1 branch
@@ -136,7 +78,8 @@ bool clear_intermediate_bb(BasicBlock* bb, bool is_guarded) {
 
 /*
 Check 1: adiacenza
-Ritorna 0 se non sono adiacenti, 1 se sono adiacenti caso guarded, 2 se sono adiacenti caso non guarded
+Abbiamo usato un enum personalizzato come tipo di ritorno, perche' ci servira' sapere se siamo nel caso 1 o nel caso 2
+(ovvero con Loop entrambi guarded o entrambi non guarded) nel check 3 sulla cf equivalenza.
 */
 AdjacencyStatus are_adjacent(Loop* L0, Loop* L1) {
   bool L0_guarded = L0->isGuarded();
@@ -157,21 +100,25 @@ AdjacencyStatus are_adjacent(Loop* L0, Loop* L1) {
       return NotAdjacent;
     }
 
+    // Ora facciamo un controllo sul fatto che il BB a cui punta la guardia 0, ovviamente non quello dentro al loop
+    // deve essere l'entry del loop 1, che in questo caso e' il blocco che contiene la guardia 1
     BasicBlock* entry1 = guard1->getParent();
     BasicBlock* out_guard0 = guard0->getSuccessor(1); // ipotizziamo true = dentro, false = fuori
-
-
     if (out_guard0 != entry1) {
       outs() << "\t[X] La guardia di L0 non punta all'entry di L1\n";
       return NotAdjacent;
     }
     outs() << "\t[✓] La guardia di L0 punta all'entry di L1\n";
+    
+    // Ora controlliamo che non ci siano istruzioni nel blocco di guardia per assicurarci che i loop siano effettivamente
+    // adiacenti, senza rischiare che delle istruzioni tra i due loop si "infilino" nel bb della guardia 1
     bool is_guarded = true;
     if (!clear_intermediate_bb(out_guard0, is_guarded)) {
       outs() << "\t[X] Il blocco intermedio non è pulito\n";
       return NotAdjacent;
     }
 
+    // Finito di controllare la struttura del CFG, dobbiamo assicurarci che le condizioni delle guardie siano equivalenti
     Value* expr0 = guard0->getCondition();
     Value* expr1 = guard1->getCondition();
 
@@ -215,6 +162,9 @@ AdjacencyStatus are_adjacent(Loop* L0, Loop* L1) {
   outs() << "\t[X] Un solo loop è guarded: caso non valido per adiacenza\n";
   return NotAdjacent;
 }
+// =========================== FINE CHECK 1 ===============================
+
+// =========================== CHECK 3 (CF EQUIVALENZA) ===============================
 
 /*
 Check 3: cf equivalenza
@@ -228,11 +178,12 @@ bool are_cf_equivalent(Loop* L0, Loop* L1, DominatorTree& DT, PostDominatorTree&
   BasicBlock *B0 = nullptr;
   BasicBlock *B1 = nullptr;
   
+  // Distinguiamo i due casi, cambiano solo i blocchi di partenza ma la logica e il codice sotto rimane uguale
   if(status == UnguardedAdjacent){ 
     B0 = L0->getLoopPreheader();
     B1 = L1->getLoopPreheader();
   }
-  else if(status == GuardedAdjacent){ // Caso in cui devo controllare se sono cf equivalenti e sono guarded
+  else if(status == GuardedAdjacent){ 
     B0 = L0->getLoopGuardBranch()->getParent();
     B1 = L1->getLoopGuardBranch()->getParent();
   }
@@ -252,8 +203,8 @@ bool are_cf_equivalent(Loop* L0, Loop* L1, DominatorTree& DT, PostDominatorTree&
     }
   }
 
-  bool L1_postdom_L0 = false;
   //Check sulla postdominanza L1->L0
+  bool L1_postdom_L0 = false;
   auto* LI1_Node = PDT.getNode(B1);
   for (auto *PDTN : breadth_first(LI1_Node)) {
     if (PDTN->getBlock() == nullptr) continue;
@@ -263,13 +214,18 @@ bool are_cf_equivalent(Loop* L0, Loop* L1, DominatorTree& DT, PostDominatorTree&
       break;
     }
   }
+
   return L0_dom_L1 && L1_postdom_L0;
 
 }
 
+// =========================== FINE CHECK 3 ===============================
+
+// =========================== CHECK 2 (Stesso numero di iterazioni) ===============================
 
 /*
-Check 2: WIP
+Check 2:
+Questo check deve assicurasi che i due loop iterino lo stesso numero di volte
 */
 bool same_number_of_iterations(Loop* L0, Loop *L1, ScalarEvolution &SE){
   auto *TripCount0 = SE.getBackedgeTakenCount(L0);
@@ -282,25 +238,39 @@ bool same_number_of_iterations(Loop* L0, Loop *L1, ScalarEvolution &SE){
   return false;
 }
 
+// =========================== FINE CHECK 2 ===============================
+
+
+// =========================== CHECK 4 (No dipendenze negative) ===============================
+
+/*
+E' la funzione usata dal check4 per controllare eventuali dipendenze negative nelle istruzioni, in maniera "incrociata"
+Il parametro direction serve proprio a questo, per capire se stiamo lavorando con store loop 1 e load loop 0 o viceversa (NOTA: questo ci e' utile solo per prendre l'operando giusto, si poteva mettere un if)
+Ma come funziona il controllo??
+Innanzitutto, chiamiamo la funzione depends che ritorna una eventuale dipendenza; se potrebbe esserci e quindi dep e' a true, allora controlliamo se e' a distanza negativa
+Per fare cio', partiamo facendoci dare il puntatore all'elemento dell'array corrente, per poi ricavarne, con una serie di trasformazioni, l'operando effettivo che ci dice 
+quale posizione dell'array vogliamo consultare, per le due istruzioni. 
+Ora che abbiamo le posizioni di accesso andiamo a calcolarci gli scalar evolution e su di quelli facciamo i controlli:
+- Se lo start dello SE degli accessi nel loop 1 parte piu' avanti del loop 0... CONTROLLO NON PASSATO
+- Se l'incremento dello SE degli accessi nel loop 1 cresce piu' velocemente (e quindi e' maggiore) del loop 0... CONTROLLO NON PASSATO
+*/
 
 bool check_neg_dep(std::vector<Instruction*> L0_instr, std::vector<Instruction*> L1_instr, DependenceInfo &DI, ScalarEvolution &SE, int direction){
   for (auto *I0 : L0_instr) {
     for (auto *I1 : L1_instr) {
-      // if(I0->getOperand(0) == I1->getOperand(0)){
+
+      // Guardiamo se intanto c'e' il rischio di una dipendenza
         std::unique_ptr<Dependence> dep = DI.depends(I0, I1, true);
         if(dep){
+            // Visto che il rischio c'e', controlliamo se effettivamente siamo nel caso di una dipendenza a distanza negativa
             outs() << "[X] Trovata possibile dipendenza tra " << *I0 << " e " << *I1 << "\n";
 
-            // outs() << *I0 << "\n";
-            // outs() << *I1 << "\n";
-
-            // outs() << *I0->getOperand(1) << "\n";
-            // outs() << *I1->getOperand(0) << "\n";
-
+            // Ci facciamo dare il calcolatore del puntatore...
             GetElementPtrInst *ptr0 = dyn_cast<GetElementPtrInst>(I0->getOperand(1-direction));
             GetElementPtrInst *ptr1 = dyn_cast<GetElementPtrInst>(I1->getOperand(direction));
             outs() << "ptr0: " << *ptr0 << "\n... e ptr1: " << *ptr1 << "\n";
 
+            // ... cosi' da poter ragionare sugli accessi 
             auto DepOp0 = dyn_cast<Instruction>(ptr0->getOperand(1))->getOperand(0);
             auto DepOp1 = dyn_cast<Instruction>(ptr1->getOperand(1))->getOperand(0);
 
@@ -309,16 +279,16 @@ bool check_neg_dep(std::vector<Instruction*> L0_instr, std::vector<Instruction*>
 
             const SCEVAddRecExpr *Trip0 = dyn_cast<SCEVAddRecExpr>(SE.getSCEV(DepOp0));
             const SCEVAddRecExpr *Trip1 = dyn_cast<SCEVAddRecExpr>(SE.getSCEV(DepOp1));
-
+            // Una volta ricavate le triple, con start, operatore e incremento, possiamo fare i nostri controlli...
             if (Trip0 && Trip1) {
                 const SCEV *Start0 = Trip0->getStart();
                 const SCEV *Start1 = Trip1->getStart();
 
-                outs() << "Tripla 1: " << *Trip0 << "\n";
-                outs() << "Tripla 2: " << *Trip1 << "\n";
+                outs() << "Tripla 0: " << *Trip0 << "\n";
+                outs() << "Tripla 1: " << *Trip1 << "\n";
 
-                outs() << "Start 1: " << *Start0 << "\n";
-                outs() << "Start 2: " << *Start1 << "\n";
+                outs() << "Start 0: " << *Start0 << "\n";
+                outs() << "Start 1: " << *Start1 << "\n";
 
 
                 const SCEVConstant *StartConst0 = dyn_cast<SCEVConstant>(Start0);
@@ -327,31 +297,29 @@ bool check_neg_dep(std::vector<Instruction*> L0_instr, std::vector<Instruction*>
                 if (StartConst0 && StartConst1) {
                     const llvm::APInt &Val0 = StartConst0->getAPInt();
                     const llvm::APInt &Val1 = StartConst1->getAPInt();
-
+                    // Controllo a. se il loop 1 cerca di accedere ad un elemento successivo a quello consultato da loop 0 non va bene
                     if (Val0.slt(Val1)) {
                         outs() << "Start del secondo loop maggiore del primo\n";
                         return false;
                     }
                     else{
+                      // Controllo b. se il loop 1 fa dei tentativi di accesso che a lungo andare crescono piu' velocemente
                       outs() << "Okay, start del secondo loop minore del secondo, controlliamo il passo...\n";
                       const SCEV *Increment0 = Trip0->getStepRecurrence(SE);
                       const SCEV *Increment1 = Trip1->getStepRecurrence(SE);
-                      outs() << "Increment 1: " << *Increment0 << "\n";
-                      outs() << "Increment 2: " << *Increment1 << "\n";
+                      outs() << "Increment 0: " << *Increment0 << "\n";
+                      outs() << "Increment 1: " << *Increment1 << "\n";
                       const SCEVConstant *IncrementConst0 = dyn_cast<SCEVConstant>(Increment0);
                       const SCEVConstant *IncrementConst1 = dyn_cast<SCEVConstant>(Increment1);
                       if (IncrementConst0 && IncrementConst1) {
                         const llvm::APInt &Val0 = IncrementConst0->getAPInt();
                         const llvm::APInt &Val1 = IncrementConst1->getAPInt();
-                        // outs() << "val0 " << Val0 << "\n";
-                        // outs() << "val1 " << Val1 << "\n";
                         if (Val0.slt(Val1)) {
                             outs() << "Increment del secondo loop maggiore del primo\n";
                             return false;
                         }
                         else{
                           outs() << "anche controllo su incremento passato\n";
-                          return true;
                         }
                       }
                     }
@@ -366,18 +334,48 @@ bool check_neg_dep(std::vector<Instruction*> L0_instr, std::vector<Instruction*>
         }
         else{
           outs() << "\t[✓] Nessuna dipendenza negativa tra " << *I0 << " e " << *I1 << "\n";
-          return true;
         }
-
     }
   }
-  return false;
+  return true;
 }
 
 /*
 Check 4: Negative Depentencies
+Questo check richiede che non ci siano dipendenze a distanza negativa tra i due loop
+I casi che ci dobbiamo assicurare di evitare sono:
+  - quando il primo loop accede successivamente a valori modificati nelle iterazioni precedenti dal secondo loop
+    es: 
+    loop1: 
+      ...
+      a = array[i]
+      ...
+    loop2: 
+      ...
+      array[i+1] = b
+      ...
+
+  - quando il secondo loop accede ad un valore che nel primo loop verrebbe modificato in un'iterazione successiva
+    es:
+      loop1: 
+      ...
+      array[i] = a
+      ...
+    loop2: 
+      ...
+      b = array[i+3]
+      ...
+Per occuparci di questi due casi dobbiamo trattare le istruzioni che accedono alla memoria, che sono le load e le store ed in particolare fare un controllo "incrociato": 
+- store nel loop 0 con load nel loop 1
+- store nel loop 1 con load nel loop 0
+e per farlo lavoriamo in due step: 
+
+1. Popoliamo 4 vettori con load e store per entrambi i loop
+2. Facciamo il controllo incrociato, con logica realizzata dalla funzione check_neg_dep
 */
 bool no_negative_dependencies(Loop* L0, Loop *L1, DependenceInfo &DI, ScalarEvolution &SE){
+
+  // Innanzitutto, ci occupiamo di ricavare le istruzioni che ci servono dai due loop
   std::vector<Instruction*> L0_store_instructions;
   std::vector<Instruction*> L1_load_instructions;
 
@@ -389,12 +387,10 @@ bool no_negative_dependencies(Loop* L0, Loop *L1, DependenceInfo &DI, ScalarEvol
   for (BasicBlock *BB : L0->getBlocks()) {
     for (Instruction &I : *BB) {
       if(isa<StoreInst>(I)){
-        // GetElementPtrInst *ptr = dyn_cast<GetElementPtrInst>(I.getOperand(1));
         L0_store_instructions.push_back(&I);
         outs()<< "Store: " << I << "\n";
       }
       if(isa<LoadInst>(I)){
-        // GetElementPtrInst *ptr = dyn_cast<GetElementPtrInst>(I.getOperand(0));
         L0_load_instructions.push_back(&I);
         outs()<< "Load: " << I << "\n";      
       }
@@ -405,12 +401,10 @@ bool no_negative_dependencies(Loop* L0, Loop *L1, DependenceInfo &DI, ScalarEvol
   for (BasicBlock *BB : L1->getBlocks()) {
     for (Instruction &I : *BB) {
       if(isa<LoadInst>(I)){
-        // GetElementPtrInst *ptr = dyn_cast<GetElementPtrInst>(I.getOperand(0));
         L1_load_instructions.push_back(&I);
         outs()<< "Load: " << I << "\n";
       }
       if(isa<StoreInst>(I)){
-        // GetElementPtrInst *ptr = dyn_cast<GetElementPtrInst>(I.getOperand(1));
         L1_store_instructions.push_back(&I);
         outs()<< "Store: " << I << "\n";
       }
@@ -424,6 +418,8 @@ bool no_negative_dependencies(Loop* L0, Loop *L1, DependenceInfo &DI, ScalarEvol
   outs() << "\tL1 store instructions: " << L1_store_instructions.size() << "\n";
 
   outs() << "========= Fine individuazione load e store... ========\n\n";
+
+  // Successivamente, controlliamo dipendenze negative "incrociate"
 
   bool neg_dep_store0_load1 = true;
   if(L0_store_instructions.size() && L1_load_instructions.size()){
@@ -439,6 +435,9 @@ bool no_negative_dependencies(Loop* L0, Loop *L1, DependenceInfo &DI, ScalarEvol
 
 }
 
+// =========================== FINE CHECK 4 ===============================
+
+// =========================== FUSION effettiva ===============================
 
 int checkLatchBranchType(BasicBlock *Latch) {
   if (!Latch) {
@@ -461,8 +460,6 @@ int checkLatchBranchType(BasicBlock *Latch) {
       return 0;
   }
 }
-
-
 
 bool fuse_loop(Loop* L0, Loop* L1, ScalarEvolution &SE){
   PHINode* indVar0 = L0->getInductionVariable(SE);
@@ -548,9 +545,9 @@ bool fuse_loop(Loop* L0, Loop* L1, ScalarEvolution &SE){
 
   BB_preheader1->dropAllReferences(); 
   BB_preheader1->eraseFromParent();
-  Function *F = BB_header0->getParent();
-  outs() << "\n\n\n";
-  F->print(llvm::outs());
+  // Function *F = BB_header0->getParent();
+  // outs() << "\n\n\n";
+  // F->print(llvm::outs());
   }
   
 
@@ -562,6 +559,18 @@ bool fuse_loop(Loop* L0, Loop* L1, ScalarEvolution &SE){
   }
 
   return false;
+}
+
+// =========================== Fine fusion ===============================
+
+bool printCheckResult(bool condition, const std::string &message, int checkNumber) {
+  if (condition) {
+    outs() << "[✓] Check " << checkNumber << " superato: " << message << "\n";
+    return true;
+  } else {
+    outs() << "[X] Check " << checkNumber << " non superato: " << message << "\n";
+    return false;
+  }
 }
 
 /*
@@ -587,46 +596,27 @@ bool analyze_loop(LoopInfo &LI, DominatorTree& DT, PostDominatorTree& PDT, Scala
   for (int i = Worklist.size() - 1; i >= 1; i--) {
     Loop* L0 = Worklist[i];
     Loop* L1 = Worklist[i - 1];
-
+  
     outs() << "Analisi della coppia L" << i << " e L" << (i - 1) << "\n";
-
+  
     printSeparator("Check 1: Adiacenza");
     AdjacencyStatus adj_status = are_adjacent(L0, L1);
-
-    if (adj_status != NotAdjacent) {
-      outs() << "[✓] Check 1 superato: loop adiacenti\n";
-
-      printSeparator("Check 3: Equivalenza di controllo di flusso");
-      if (are_cf_equivalent(L0, L1, DT, PDT, adj_status)) {
-        outs() << "[✓] Check 3 superato: equivalenza CF\n";
-
-        printSeparator("Check 2: Uguaglianza del numero di iterazioni");
-        if (same_number_of_iterations(L0, L1, SE)) {
-          outs() << "[✓] Check 2 superato: numero di iterazioni uguale\n";
-        
-          printSeparator("Check 4: Controllo dipendenze negative");
-          if(no_negative_dependencies(L0, L1, DI, SE)){
-            outs() << "[✓] Check 4 superato\n";
-            printSeparator("Tutti i check superati, procedo alla fusion");
-
-            fuse_loop(L0, L1, SE);
-            modified = true;
-          } else {
-            outs() << "[X] Check 4 non superato\n";
-          }
-
-        } else {
-          outs() << "[X] Check 2 non superato\n";
-        }
-
-      } else {
-        outs() << "[X] Check 3 non superato\n";
-      }
-
-    } else {
-      outs() << "[X] Check 1 non superato: loop non adiacenti\n";
-    }
+    if (!printCheckResult(adj_status != NotAdjacent, "loop adiacenti", 1)) continue;
+  
+    printSeparator("Check 3: Equivalenza di controllo di flusso");
+    if (!printCheckResult(are_cf_equivalent(L0, L1, DT, PDT, adj_status), "equivalenza CF", 3)) continue;
+  
+    printSeparator("Check 2: Uguaglianza del numero di iterazioni");
+    if (!printCheckResult(same_number_of_iterations(L0, L1, SE), "numero di iterazioni uguale", 2)) continue;
+  
+    printSeparator("Check 4: Controllo dipendenze negative");
+    if (!printCheckResult(no_negative_dependencies(L0, L1, DI, SE), "assenza dipendenze negative", 4)) continue;
+  
+    printSeparator("Tutti i check superati, procedo alla fusion");
+    fuse_loop(L0, L1, SE);
+    modified = true;
   }
+  
   printSeparator("Fine ottimizzazione Loop Fusion");
   return modified;
 }

@@ -1,18 +1,18 @@
 digraph unnamed {
 
-	Node0x5de186e4e310 [shape=record,label="{  br label %2\n}"];
-	Node0x5de186e4e310 -> Node0x5de186e4e4c0;
-	Node0x5de186e4e4c0 [shape=record,label="{  %.02 = phi i32 [ 0, %1 ], [ %4, %5 ]\n  %.01 = phi i32 [ 0, %1 ], [ %3, %5 ]\n  %3 = add nsw i32 %.01, 2\n  %4 = add nsw i32 %.02, %3\n  br label %5\n}"];
-	Node0x5de186e4e4c0 -> Node0x5de186e509c0;
-	Node0x5de186e509c0 [shape=record,label="{  %6 = icmp slt i32 %3, %0\n  br i1 %6, label %2, label %7, !llvm.loop !6\n}"];
-	Node0x5de186e509c0 -> Node0x5de186e4e4c0;
-	Node0x5de186e509c0 -> Node0x5de186e513e0;
-	Node0x5de186e513e0 [shape=record,label="{  br label %8\n}"];
-	Node0x5de186e513e0 -> Node0x5de186e51fc0;
-	Node0x5de186e51fc0 [shape=record,label="{  %.0 = phi i32 [ 1, %7 ], [ %10, %12 ]\n  %9 = add nsw i32 %.01, 3\n  %10 = mul nsw i32 %.0, %9\n  %11 = add nsw i32 %.01, 2\n  br label %12\n}"];
-	Node0x5de186e51fc0 -> Node0x5de186e52090;
-	Node0x5de186e52090 [shape=record,label="{  %13 = icmp slt i32 %11, %0\n  br i1 %13, label %8, label %14, !llvm.loop !8\n}"];
-	Node0x5de186e52090 -> Node0x5de186e51fc0;
-	Node0x5de186e52090 -> Node0x5de186e528a0;
-	Node0x5de186e528a0 [shape=record,label="{  %15 = call i32 (ptr, ...) @printf(ptr noundef @.str, i32 noundef %4)\n  %16 = call i32 (ptr, ...) @printf(ptr noundef @.str.1, i32 noundef %10)\n  ret void\n}"];
+	Node0x5f39d1c8c540 [shape=record,label="{  %2 = mul nsw i32 2, %0\n  %3 = zext i32 %2 to i64\n  %4 = call ptr @llvm.stacksave.p0()\n  %5 = alloca i32, i64 %3, align 16\n  br label %6\n}"];
+	Node0x5f39d1c8c540 -> Node0x5f39d1c8ef80;
+	Node0x5f39d1c8ef80 [shape=record,label="{  %.01 = phi i32 [ 0, %1 ], [ %11, %13 ]\n  %7 = add nsw i32 %.01, 1\n  %8 = sext i32 %7 to i64\n  %9 = getelementptr inbounds i32, ptr %5, i64 %8\n  %10 = load i32, ptr %9, align 4\n  %11 = add nsw i32 %.01, 1\n  %12 = add nsw i32 %10, %11\n  br label %13\n}"];
+	Node0x5f39d1c8ef80 -> Node0x5f39d1c8f490;
+	Node0x5f39d1c8f490 [shape=record,label="{  %14 = icmp slt i32 %11, %0\n  br i1 %14, label %6, label %15, !llvm.loop !6\n}"];
+	Node0x5f39d1c8f490 -> Node0x5f39d1c8ef80;
+	Node0x5f39d1c8f490 -> Node0x5f39d1c8fd10;
+	Node0x5f39d1c8fd10 [shape=record,label="{  br label %16\n}"];
+	Node0x5f39d1c8fd10 -> Node0x5f39d1c90930;
+	Node0x5f39d1c90930 [shape=record,label="{  %.0 = phi i32 [ 1, %15 ], [ %20, %22 ]\n  %17 = sext i32 %.01 to i64\n  %18 = getelementptr inbounds i32, ptr %5, i64 %17\n  store i32 %.01, ptr %18, align 4\n  %19 = add nsw i32 %.01, 3\n  %20 = mul nsw i32 %.0, %19\n  %21 = add nsw i32 %.01, 1\n  br label %22\n}"];
+	Node0x5f39d1c90930 -> Node0x5f39d1c90a00;
+	Node0x5f39d1c90a00 [shape=record,label="{  %23 = icmp slt i32 %21, %0\n  br i1 %23, label %16, label %24, !llvm.loop !8\n}"];
+	Node0x5f39d1c90a00 -> Node0x5f39d1c90930;
+	Node0x5f39d1c90a00 -> Node0x5f39d1c910d0;
+	Node0x5f39d1c910d0 [shape=record,label="{  %25 = call i32 (ptr, ...) @printf(ptr noundef @.str, i32 noundef %12)\n  %26 = call i32 (ptr, ...) @printf(ptr noundef @.str.1, i32 noundef %20)\n  call void @llvm.stackrestore.p0(ptr %4)\n  ret void\n}"];
 }

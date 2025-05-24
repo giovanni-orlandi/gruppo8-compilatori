@@ -16,50 +16,6 @@
 
 using namespace llvm;
 
-
-// ----------------------------STAMPA GRAFO--------------------------------------------------
-// #include "llvm/Support/GraphWriter.h"
-// namespace llvm {
-// template <>
-// struct DOTGraphTraits<const llvm::Function*> : public DefaultDOTGraphTraits {
-//   DOTGraphTraits(bool isSimple = false) : DefaultDOTGraphTraits(isSimple) {}
-
-//   static std::string getNodeLabel(const llvm::BasicBlock *Node, const llvm::Function *Graph) {
-//     std::string Label;
-//     raw_string_ostream OS(Label);
-
-//     // if (!Node->getName().empty())
-//     //   OS << Node->getName() << ":\l";
-//     // else
-//     //   OS << "<anon>:\l";
-
-//     for (const auto &Inst : *Node) {
-
-//       OS << Inst << "\n";
-//     }
-
-//     return OS.str();
-//   }
-// };
-// } // namespace llvm
-
-// //dot -Tpng dotfile/cfg_loop.dot -o dotfile/cfg_loop.png
-// void dumpCFGToDotFile(llvm::Function &F, const std::string &Filename) {
-//   std::error_code EC;
-//   llvm::raw_fd_ostream File(Filename, EC, llvm::sys::fs::OF_Text);
-
-//   if (EC) {
-//     llvm::outs() << "Errore nell'apertura del file " << Filename << ": " << EC.message() << "\n";
-//     return;
-//   }
-
-//   llvm::WriteGraph(File, (const llvm::Function *)&F);
-//   llvm::outs() << "CFG scritto su: " << Filename << "\n";
-// }
-
-//-----------------------------------------------------------------------------
-
-
 namespace {
  
 struct LFOpt : PassInfoMixin<LFOpt> {
@@ -77,7 +33,7 @@ struct LFOpt : PassInfoMixin<LFOpt> {
     ScalarEvolution &SE = AM.getResult<ScalarEvolutionAnalysis>(F);
     DependenceInfo &DI = AM.getResult<DependenceAnalysis>(F);
 
-    dumpCFGToDotFile(F, "./dotfile/cfg_loop_fusion10.dot");
+    // dumpCFGToDotFile(F, "./dotfile/cfg_loop_fusion10.dot");
 
     modified = analyze_loop(LI, DT, PDT, SE, DI);
 
