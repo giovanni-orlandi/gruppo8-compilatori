@@ -1,3 +1,45 @@
+#include "llvm/Support/GraphWriter.h"
+namespace llvm {
+template <>
+struct DOTGraphTraits<const llvm::Function*> : public DefaultDOTGraphTraits {
+  DOTGraphTraits(bool isSimple = false) : DefaultDOTGraphTraits(isSimple) {}
+
+  static std::string getNodeLabel(const llvm::BasicBlock *Node, const llvm::Function *Graph) {
+    std::string Label;
+    raw_string_ostream OS(Label);
+
+    // if (!Node->getName().empty())
+    //   OS << Node->getName() << ":\l";
+    // else
+    //   OS << "<anon>:\l";
+
+    for (const auto &Inst : *Node) {
+
+      OS << Inst << "\n";
+    }
+
+    return OS.str();
+  }
+};
+} // namespace llvm
+
+//dot -Tpng dotfile/cfg_loop.dot -o dotfile/cfg_loop.png
+void dumpCFGToDotFile(llvm::Function &F, const std::string &Filename) {
+  std::error_code EC;
+  llvm::raw_fd_ostream File(Filename, EC, llvm::sys::fs::OF_Text);
+
+  if (EC) {
+    llvm::outs() << "Errore nell'apertura del file " << Filename << ": " << EC.message() << "\n";
+    return;
+  }
+
+  llvm::WriteGraph(File, (const llvm::Function *)&F);
+  llvm::outs() << "CFG scritto su: " << Filename << "\n";
+}
+
+
+
+
 
 using namespace llvm;
 
@@ -397,7 +439,32 @@ bool no_negative_dependencies(Loop* L0, Loop *L1, DependenceInfo &DI, ScalarEvol
 
 }
 
-void fuse_loop(Loop* L0, Loop* L1){
+
+int checkLatchBranchType(BasicBlock *Latch) {
+  if (!Latch) {
+      errs() << "Loop has no latch!\n";
+      return 0;
+  }
+
+  Instruction *Term = Latch->getTerminator(); // Ultima istruzione del latch
+
+  if (BranchInst *BI = dyn_cast<BranchInst>(Term)) {
+      if (BI->isConditional()) {
+          errs() << "Latch has a conditional branch.\n";
+          return 1;
+      } else {
+          errs() << "Latch has an unconditional branch.\n";
+          return 2;
+      }
+  } else {
+      errs() << "Latch terminator is not a BranchInst.\n";
+      return 0;
+  }
+}
+
+
+
+bool fuse_loop(Loop* L0, Loop* L1){
   PHINode* indVar0 = L0->getCanonicalInductionVariable();
   PHINode* indVar1 = L1->getCanonicalInductionVariable();
   outs() << "Ind var0 " << *indVar0 << "\n";
@@ -406,13 +473,106 @@ void fuse_loop(Loop* L0, Loop* L1){
   indVar1->eraseFromParent();
 
 
-  return;
+
+  BasicBlock* BB_latch0 = L0->getLoopLatch();
+  BasicBlock* BB_body0 = *pred_begin(BB_latch0);  // assumendo un solo predecessore
+  
+  dumpCFGToDotFile(*BB_latch0->getParent(), "./dotfile/cfg_loop_fusion_m.dot");
+
+  BasicBlock* BB_latch1 = L1->getLoopLatch();
+  BasicBlock* BB_body1 = *pred_begin(BB_latch1);  // assumendo un solo predecessore
+  
+  BasicBlock* BB_header0 = L0->getHeader();
+  BasicBlock* BB_preheader1 = L1->getLoopPreheader();
+  
+  outs() << "Pre-header0: " << *L0->getLoopPreheader();
+  outs() << "\nHeader0: " << *BB_header0 << "\n";
+  outs() << "Latch0: " << *BB_latch0 << "\n";
+  outs() << "Latch2: " << *BB_latch1 << "\n";
+  
+  int branch_latch_0 = checkLatchBranchType(BB_latch0);
+  
+  if (branch_latch_0 == 1) {
+      // Modifica la terminazione del body0 per puntare a body1
+      BranchInst *BodyTerm0 = dyn_cast<BranchInst>(BB_body0->getTerminator());
+      outs() << "BB terminator body0: " << *BodyTerm0 << "\n";
+      outs() << "BB body1: " << *BB_body1 << "\n";
+      
+      BodyTerm0->setSuccessor(0, BB_body1);
+      outs() << "Modificato il branch incondizionato: ora punta a BB_body1.\n";
+  
+      // Modifica latch1 per farlo puntare a header0
+      BranchInst *LatchTerm1 = dyn_cast<BranchInst>(BB_latch1->getTerminator());
+      LatchTerm1->setSuccessor(0, BB_header0);
+
+
+      for (auto it = BB_body1->begin(); it != BB_body1->end(); ++it) {
+        if (PHINode *PN = dyn_cast<PHINode>(&*it)) {
+            bool related = false;
+            outs() << "AAAAAAAAAa\n";
+            outs() << *PN << "\n";
+    
+            for (unsigned i = 0; i < PN->getNumIncomingValues(); ++i) {
+                if (PN->getIncomingValue(i) == indVar0) {
+                    related = true;
+                    break;
+                }
+            }
+    
+            if (related) {
+                outs() << "PHI associata a indVar0 trovata in BB_body1: " << *PN << "\n";
+            }
+    
+        } else {
+            break; // fine delle PHI
+        }
+    }
+    
+
+    for (Instruction &I : *BB_header0) {
+      if (PHINode *PN = dyn_cast<PHINode>(&I)) {
+          for (unsigned i = 0; i < PN->getNumIncomingValues(); ++i) {
+              if (PN->getIncomingBlock(i) == BB_latch0) {
+                  PN->setIncomingBlock(i, BB_latch1);
+                  outs() << "Modificata PHI da latch0 a latch1: " << *PN << "\n";
+              }
+          }
+      } else {
+          break;
+      }
+
+  }
+  outs() << "Latch 0 : " << *BB_latch0 << "\n";
+  outs() << "Preheader1 : " << *BB_preheader1 << "\n";
+
+  BB_latch0->dropAllReferences(); 
+  BB_latch0->eraseFromParent();
+  // outs() << "here2\n";
+
+
+  BB_preheader1->dropAllReferences(); 
+  BB_preheader1->eraseFromParent();
+  Function *F = BB_header0->getParent();
+  outs() << "\n\n\n";
+  F->print(llvm::outs());
+  }
+  
+
+  else if(branch_latch_0 == 2){
+    int a = 0;
+  }
+  else{
+    return false;
+  }
+
+  return false;
 }
 
 /*
 Funzione da cui parte l'analisi, chiama le varie funzioni ausiliarie per i task e passi dell'algoritmo.
 */
 bool analyze_loop(LoopInfo &LI, DominatorTree& DT, PostDominatorTree& PDT, ScalarEvolution &SE, DependenceInfo &DI) {
+  
   bool modified = false;
   SmallVector<Loop *, 8> Worklist;
 

@@ -3,58 +3,81 @@ source_filename = "test/test.c"
 target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-pc-linux-gnu"
 
+@.str = private unnamed_addr constant [11 x i8] c"Somma: %d\0A\00", align 1
+@.str.1 = private unnamed_addr constant [14 x i8] c"Prodotto: %d\0A\00", align 1
+
 ; Function Attrs: noinline nounwind uwtable
-define dso_local void @testarray(i32 noundef %0) #0 {
+define dso_local void @test(i32 noundef %0) #0 {
   %2 = alloca i32, align 4
   %3 = alloca i32, align 4
   %4 = alloca i32, align 4
   %5 = alloca i32, align 4
-  %6 = alloca i32, align 4
-  %7 = alloca i32, align 4
   store i32 %0, ptr %2, align 4
-  store i32 0, ptr %6, align 4
-  store i32 0, ptr %7, align 4
-  br label %8
+  store i32 0, ptr %3, align 4
+  store i32 0, ptr %4, align 4
+  store i32 1, ptr %5, align 4
+  br label %6
 
-8:                                                ; preds = %13, %1
-  %9 = load i32, ptr %6, align 4
-  %10 = mul nsw i32 3, %9
-  store i32 %10, ptr %3, align 4
-  %11 = load i32, ptr %6, align 4
-  %12 = add nsw i32 %11, 1
-  store i32 %12, ptr %6, align 4
-  br label %13
+6:                                                ; preds = %12, %1
+  %7 = load i32, ptr %3, align 4
+  %8 = add nsw i32 %7, 1
+  store i32 %8, ptr %3, align 4
+  %9 = load i32, ptr %3, align 4
+  %10 = load i32, ptr %4, align 4
+  %11 = add nsw i32 %10, %9
+  store i32 %11, ptr %4, align 4
+  br label %12
 
-13:                                               ; preds = %8
-  %14 = load i32, ptr %6, align 4
-  %15 = load i32, ptr %2, align 4
-  %16 = icmp slt i32 %14, %15
-  br i1 %16, label %8, label %17, !llvm.loop !6
+12:                                               ; preds = %6
+  %13 = load i32, ptr %3, align 4
+  %14 = load i32, ptr %2, align 4
+  %15 = icmp slt i32 %13, %14
+  br i1 %15, label %6, label %16, !llvm.loop !6
 
-17:                                               ; preds = %13
-  store i32 0, ptr %6, align 4
-  br label %18
+16:                                               ; preds = %12
+  store i32 0, ptr %3, align 4
+  br label %17
 
-18:                                               ; preds = %23, %17
-  %19 = load i32, ptr %6, align 4
-  %20 = mul nsw i32 3, %19
-  store i32 %20, ptr %4, align 4
-  %21 = load i32, ptr %6, align 4
-  %22 = add nsw i32 %21, 1
-  store i32 %22, ptr %6, align 4
-  br label %23
+17:                                               ; preds = %24, %16
+  %18 = load i32, ptr %3, align 4
+  %19 = add nsw i32 %18, 1
+  %20 = load i32, ptr %5, align 4
+  %21 = mul nsw i32 %20, %19
+  store i32 %21, ptr %5, align 4
+  %22 = load i32, ptr %3, align 4
+  %23 = add nsw i32 %22, 1
+  store i32 %23, ptr %3, align 4
+  br label %24
 
-23:                                               ; preds = %18
-  %24 = load i32, ptr %6, align 4
-  %25 = load i32, ptr %2, align 4
-  %26 = icmp slt i32 %24, %25
-  br i1 %26, label %18, label %27, !llvm.loop !8
+24:                                               ; preds = %17
+  %25 = load i32, ptr %3, align 4
+  %26 = load i32, ptr %2, align 4
+  %27 = icmp slt i32 %25, %26
+  br i1 %27, label %17, label %28, !llvm.loop !8
 
-27:                                               ; preds = %23
+28:                                               ; preds = %24
+  %29 = load i32, ptr %4, align 4
+  %30 = call i32 (ptr, ...) @printf(ptr noundef @.str, i32 noundef %29)
+  %31 = load i32, ptr %5, align 4
+  %32 = call i32 (ptr, ...) @printf(ptr noundef @.str.1, i32 noundef %31)
   ret void
 }
 
+declare i32 @printf(ptr noundef, ...) #1
+
+; Function Attrs: noinline nounwind uwtable
+define dso_local i32 @main() #0 {
+  %1 = alloca i32, align 4
+  %2 = alloca i32, align 4
+  store i32 0, ptr %1, align 4
+  store i32 5, ptr %2, align 4
+  %3 = load i32, ptr %2, align 4
+  call void @test(i32 noundef %3)
+  ret i32 0
+}
+
 attributes #0 = { noinline nounwind uwtable "frame-pointer"="all" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cmov,+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
+attributes #1 = { "frame-pointer"="all" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cmov,+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
 
 !llvm.module.flags = !{!0, !1, !2, !3, !4}
 !llvm.ident = !{!5}

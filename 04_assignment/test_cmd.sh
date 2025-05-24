@@ -20,3 +20,6 @@ opt -S -p mem2reg "$BASENAME.ll" -o "$BASENAME.m2r.ll" || exit 1
 opt -load-pass-plugin ./build/libLFOpt.so -passes=loopfusion "$BASENAME.m2r.ll" -S -o "$BASENAME.optimized.ll" || exit 1
 
 echo "Ottimizzazione completata: $BASENAME.optimized.ll"
+
+dot -Tpng ./dotfile/cfg_loop_fusion_m.dot -o ./dotfile/cfg_loop_fusion_m.png
+dot -Tpng ./dotfile/cfg_loop_fusion.dot -o ./dotfile/cfg_loop_fusion_10.png
