@@ -464,9 +464,9 @@ int checkLatchBranchType(BasicBlock *Latch) {
 
 
 
-bool fuse_loop(Loop* L0, Loop* L1){
-  PHINode* indVar0 = L0->getCanonicalInductionVariable();
-  PHINode* indVar1 = L1->getCanonicalInductionVariable();
+bool fuse_loop(Loop* L0, Loop* L1, ScalarEvolution &SE){
+  PHINode* indVar0 = L0->getInductionVariable(SE);
+  PHINode* indVar1 = L1->getInductionVariable(SE);
   outs() << "Ind var0 " << *indVar0 << "\n";
   outs() << "Ind var1 " << *indVar1 << "\n";
   indVar1->replaceAllUsesWith(indVar0);
@@ -476,6 +476,7 @@ bool fuse_loop(Loop* L0, Loop* L1){
 
   BasicBlock* BB_latch0 = L0->getLoopLatch();
   BasicBlock* BB_body0 = *pred_begin(BB_latch0);  // assumendo un solo predecessore
+  BasicBlock* BB_preheader0 = L0->getLoopPreheader();
   
   dumpCFGToDotFile(*BB_latch0->getParent(), "./dotfile/cfg_loop_fusion_m.dot");
 
@@ -506,27 +507,22 @@ bool fuse_loop(Loop* L0, Loop* L1){
       LatchTerm1->setSuccessor(0, BB_header0);
 
 
-      for (auto it = BB_body1->begin(); it != BB_body1->end(); ++it) {
+      // ORA MI OCCUPO DELLE PHI
+      for (auto it = BB_body1->begin(); it != BB_body1->end(); ) {
         if (PHINode *PN = dyn_cast<PHINode>(&*it)) {
-            bool related = false;
-            outs() << "AAAAAAAAAa\n";
-            outs() << *PN << "\n";
+            ++it; // avanza prima di spostare, per non invalidare l'iteratore
     
-            for (unsigned i = 0; i < PN->getNumIncomingValues(); ++i) {
-                if (PN->getIncomingValue(i) == indVar0) {
-                    related = true;
-                    break;
-                }
-            }
+                PN->setIncomingBlock(0, BB_preheader0);
     
-            if (related) {
-                outs() << "PHI associata a indVar0 trovata in BB_body1: " << *PN << "\n";
-            }
+            // sposta fisicamente la PHI all'inizio di BB_header0
+            PN->moveBefore(&*BB_header0->getFirstInsertionPt());
     
+            outs() << "Spostata PHI in header0: " << *PN << "\n";
         } else {
-            break; // fine delle PHI
+            break;
         }
     }
+    
     
 
     for (Instruction &I : *BB_header0) {
@@ -613,7 +609,7 @@ bool analyze_loop(LoopInfo &LI, DominatorTree& DT, PostDominatorTree& PDT, Scala
             outs() << "[✓] Check 4 superato\n";
             printSeparator("Tutti i check superati, procedo alla fusion");
 
-            fuse_loop(L0, L1);
+            fuse_loop(L0, L1, SE);
             modified = true;
           } else {
             outs() << "[X] Check 4 non superato\n";

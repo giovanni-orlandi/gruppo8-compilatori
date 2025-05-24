@@ -1,18 +1,4 @@
 digraph unnamed {
 
-	Node0x60bc8dd7f310 [shape=record,label="{  br label %2\n}"];
-	Node0x60bc8dd7f310 -> Node0x60bc8dd7f4c0;
-	Node0x60bc8dd7f4c0 [shape=record,label="{  %.02 = phi i32 [ 0, %1 ], [ %4, %5 ]\n  %.01 = phi i32 [ 0, %1 ], [ %3, %5 ]\n  %3 = add nsw i32 %.01, 1\n  %4 = add nsw i32 %.02, %3\n  br label %5\n}"];
-	Node0x60bc8dd7f4c0 -> Node0x60bc8dd819c0;
-	Node0x60bc8dd819c0 [shape=record,label="{  %6 = icmp slt i32 %3, %0\n  br i1 %6, label %2, label %7, !llvm.loop !6\n}"];
-	Node0x60bc8dd819c0 -> Node0x60bc8dd7f4c0;
-	Node0x60bc8dd819c0 -> Node0x60bc8dd821e0;
-	Node0x60bc8dd821e0 [shape=record,label="{  br label %8\n}"];
-	Node0x60bc8dd821e0 -> Node0x60bc8dd82dc0;
-	Node0x60bc8dd82dc0 [shape=record,label="{  %.1 = phi i32 [ 0, %7 ], [ %11, %12 ]\n  %.0 = phi i32 [ 1, %7 ], [ %10, %12 ]\n  %9 = add nsw i32 %.1, 1\n  %10 = mul nsw i32 %.0, %9\n  %11 = add nsw i32 %.1, 1\n  br label %12\n}"];
-	Node0x60bc8dd82dc0 -> Node0x60bc8dd82e90;
-	Node0x60bc8dd82e90 [shape=record,label="{  %13 = icmp slt i32 %11, %0\n  br i1 %13, label %8, label %14, !llvm.loop !8\n}"];
-	Node0x60bc8dd82e90 -> Node0x60bc8dd82dc0;
-	Node0x60bc8dd82e90 -> Node0x60bc8dd83230;
-	Node0x60bc8dd83230 [shape=record,label="{  %15 = call i32 (ptr, ...) @printf(ptr noundef @.str, i32 noundef %4)\n  %16 = call i32 (ptr, ...) @printf(ptr noundef @.str.1, i32 noundef %10)\n  ret void\n}"];
+	Node0x5de186e52af0 [shape=record,label="{  call void @test(i32 noundef 5)\n  ret i32 0\n}"];
 }

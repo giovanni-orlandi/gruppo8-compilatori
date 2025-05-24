@@ -20,7 +20,7 @@ define dso_local void @test(i32 noundef %0) #0 {
 
 6:                                                ; preds = %12, %1
   %7 = load i32, ptr %3, align 4
-  %8 = add nsw i32 %7, 1
+  %8 = add nsw i32 %7, 2
   store i32 %8, ptr %3, align 4
   %9 = load i32, ptr %3, align 4
   %10 = load i32, ptr %4, align 4
@@ -40,12 +40,12 @@ define dso_local void @test(i32 noundef %0) #0 {
 
 17:                                               ; preds = %24, %16
   %18 = load i32, ptr %3, align 4
-  %19 = add nsw i32 %18, 1
+  %19 = add nsw i32 %18, 3
   %20 = load i32, ptr %5, align 4
   %21 = mul nsw i32 %20, %19
   store i32 %21, ptr %5, align 4
   %22 = load i32, ptr %3, align 4
-  %23 = add nsw i32 %22, 1
+  %23 = add nsw i32 %22, 2
   store i32 %23, ptr %3, align 4
   br label %24
 
