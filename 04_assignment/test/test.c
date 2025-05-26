@@ -16,6 +16,11 @@ void test(int n){
     prodotto *= i;
         // }
     };
+    i = 0;
+    while(i < n){
+        i++;
+        somma+=i;
+    }
 
     printf("Somma: %d\n", somma);
     printf("Prodotto: %d\n", prodotto);

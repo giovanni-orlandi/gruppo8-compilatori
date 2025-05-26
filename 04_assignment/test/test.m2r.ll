@@ -36,8 +36,22 @@ define dso_local void @test(i32 noundef %0) #0 {
   br label %8, !llvm.loop !8
 
 13:                                               ; preds = %8
-  %14 = call i32 (ptr, ...) @printf(ptr noundef @.str, i32 noundef %.02)
-  %15 = call i32 (ptr, ...) @printf(ptr noundef @.str.1, i32 noundef %.0)
+  br label %14
+
+14:                                               ; preds = %16, %13
+  %.13 = phi i32 [ %.02, %13 ], [ %18, %16 ]
+  %.2 = phi i32 [ 0, %13 ], [ %17, %16 ]
+  %15 = icmp slt i32 %.2, %0
+  br i1 %15, label %16, label %19
+
+16:                                               ; preds = %14
+  %17 = add nsw i32 %.2, 1
+  %18 = add nsw i32 %.13, %17
+  br label %14, !llvm.loop !9
+
+19:                                               ; preds = %14
+  %20 = call i32 (ptr, ...) @printf(ptr noundef @.str, i32 noundef %.13)
+  %21 = call i32 (ptr, ...) @printf(ptr noundef @.str.1, i32 noundef %.0)
   ret void
 }
 
@@ -64,3 +78,4 @@ attributes #1 = { "frame-pointer"="all" "no-trapping-math"="true" "stack-protect
 !6 = distinct !{!6, !7}
 !7 = !{!"llvm.loop.mustprogress"}
 !8 = distinct !{!8, !7}
+!9 = distinct !{!9, !7}

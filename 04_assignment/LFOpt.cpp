@@ -35,7 +35,7 @@ struct LFOpt : PassInfoMixin<LFOpt> {
 
     // dumpCFGToDotFile(F, "./dotfile/cfg_loop_fusion10.dot");
 
-    modified = analyze_loop(LI, DT, PDT, SE, DI);
+    modified = analyze_loop(F, LI, DT, PDT, SE, DI);
 
 
     return modified ? PreservedAnalyses::none() : PreservedAnalyses::all();
