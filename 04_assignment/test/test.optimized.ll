@@ -7,46 +7,38 @@ target triple = "x86_64-pc-linux-gnu"
 @.str.1 = private unnamed_addr constant [14 x i8] c"Prodotto: %d\0A\00", align 1
 
 ; Function Attrs: noinline nounwind uwtable
-define dso_local i32 @test_arr(i32 noundef %0) #0 {
-  %2 = icmp sgt i32 %0, 0
-  br i1 %2, label %3, label %13
+define dso_local void @test(i32 noundef %0) #0 {
+  br label %2
 
-3:                                                ; preds = %1
-  br label %4
+2:                                                ; preds = %7, %1
+  %.02 = phi i32 [ 0, %1 ], [ %6, %7 ]
+  %.01 = phi i32 [ 0, %1 ], [ %5, %7 ]
+  %.1 = phi i32 [ 0, %1 ], [ %8, %7 ]
+  %.0 = phi i32 [ 1, %1 ], [ %9, %7 ]
+  %3 = icmp slt i32 %.01, %0
+  br i1 %3, label %4, label %10
 
-4:                                                ; preds = %10, %3
-  %.03 = phi i32 [ 0, %3 ], [ %6, %10 ]
-  %.01 = phi i32 [ 0, %3 ], [ %5, %10 ]
-  %.0 = phi i32 [ 1, %3 ], [ %9, %10 ]
-  %5 = add nsw i32 %.01, %.03
-  %6 = add nsw i32 %.03, 1
-  br label %7
+4:                                                ; preds = %2
+  %5 = add nsw i32 %.01, 1
+  %6 = add nsw i32 %.02, %5
+  br label %7, !llvm.loop !6
 
 7:                                                ; preds = %4
-  %8 = add nsw i32 %.03, 1
+  %8 = add nsw i32 %.1, 1
   %9 = mul nsw i32 %.0, %8
-  br label %10
+  br label %2, !llvm.loop !8
 
-10:                                               ; preds = %7
-  %11 = icmp slt i32 %8, %0
-  br i1 %11, label %4, label %12, !llvm.loop !6
-
-12:                                               ; preds = %10
-  br label %13
-
-13:                                               ; preds = %1, %12
-  %.1 = phi i32 [ %9, %12 ], [ 1, %1 ]
-  %.12 = phi i32 [ %5, %12 ], [ 0, %1 ]
-  %14 = call i32 (ptr, ...) @printf(ptr noundef @.str, i32 noundef %.12)
-  %15 = call i32 (ptr, ...) @printf(ptr noundef @.str.1, i32 noundef %.1)
-  ret i32 undef
+10:                                               ; preds = %2
+  %11 = call i32 (ptr, ...) @printf(ptr noundef @.str, i32 noundef %.02)
+  %12 = call i32 (ptr, ...) @printf(ptr noundef @.str.1, i32 noundef %.0)
+  ret void
 }
 
 declare i32 @printf(ptr noundef, ...) #1
 
 ; Function Attrs: noinline nounwind uwtable
 define dso_local void @main() #0 {
-  %1 = call i32 @test_arr(i32 noundef 4)
+  call void @test(i32 noundef 4)
   ret void
 }
 
@@ -64,3 +56,4 @@ attributes #1 = { "frame-pointer"="all" "no-trapping-math"="true" "stack-protect
 !5 = !{!"Ubuntu clang version 19.1.1 (1ubuntu1~24.04.2)"}
 !6 = distinct !{!6, !7}
 !7 = !{!"llvm.loop.mustprogress"}
+!8 = distinct !{!8, !7}

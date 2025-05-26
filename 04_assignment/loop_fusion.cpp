@@ -477,6 +477,7 @@ bool fuse_loop(Loop* L0, Loop* L1, ScalarEvolution &SE, AdjacencyStatus adj_stat
   BasicBlock* BB_body0 = *pred_begin(BB_latch0);  // assumendo un solo predecessore
   BasicBlock* BB_preheader0 = L0->getLoopPreheader();
   BasicBlock* BB_header0 = L0->getHeader();
+  BasicBlock* BB_header1 = L1->getHeader();
 
   BasicBlock* BB_latch1 = L1->getLoopLatch();
   BasicBlock* BB_body1 = *pred_begin(BB_latch1);  // assumendo un solo predecessore  
@@ -484,11 +485,11 @@ bool fuse_loop(Loop* L0, Loop* L1, ScalarEvolution &SE, AdjacencyStatus adj_stat
   
   BasicBlock* BB_exit1 = L1->getExitBlock();
 
-  // outs() << "Preheader0: " << *BB_preheader0 << "\n";
-  // outs() << "Header0: " << *BB_header0 << "\n";
-  // outs() << "Latch0: " << *BB_latch0 << "\n";
+  outs() << "Preheader0: " << *BB_preheader0 << "\n";
+  outs() << "Header0: " << *BB_header0 << "\n";
+  outs() << "Latch0: " << *BB_latch0 << "\n";
 
-  // outs() << "Latch1: " << *BB_latch1 << "\n";
+  outs() << "Latch1: " << *BB_latch1 << "\n";
    
   int branch_latch_0 = checkLatchBranchType(BB_latch0);
   
@@ -636,7 +637,56 @@ bool fuse_loop(Loop* L0, Loop* L1, ScalarEvolution &SE, AdjacencyStatus adj_stat
   
 
   else if(branch_latch_0 == 2){
-    int a = 0;
+    BranchInst *body_term0 = dyn_cast<BranchInst>(BB_latch0->getTerminator());
+    body_term0->setSuccessor(0, BB_latch1);
+
+    BranchInst *body_term1 = dyn_cast<BranchInst>(BB_latch1->getTerminator());
+    body_term1->setSuccessor(0, BB_header0);
+
+    BranchInst *header_term0 = dyn_cast<BranchInst>(BB_header0->getTerminator());
+    header_term0->setSuccessor(1, BB_exit1);
+
+    for (Instruction &I : *BB_header0) {
+      if (PHINode *PN = dyn_cast<PHINode>(&I)) {
+          for (unsigned i = 0; i < PN->getNumIncomingValues(); ++i) {
+            // Invertiamo il predecessore, dove prima era il BB_latch0 che ora non e' piu' un blocco sensato nel CFG,
+            // con il BB_latch1
+              if (PN->getIncomingBlock(i) == BB_latch0) {
+                  PN->setIncomingBlock(i, BB_latch1);
+                  outs() << "Modificata PHI da latch0 a latch1: " << *PN << "\n";
+              }
+          }
+      } else {
+          break; 
+      }
+
+  }
+  for (auto it = BB_header1->begin(); it != BB_header1->end(); ) {
+    if (PHINode *PN = dyn_cast<PHINode>(&*it)) {
+        ++it; // avanza prima di spostare, per non invalidare l'iteratore
+
+        // Le phi dentro al body del secondo loop devono essere spostate all'header del primo loop, perche' e' diventato anche l'header del
+        // secondo. Dunque bisogna, oltre che appunto spostarle, cambiare un predecessore, perche' il primo predecessore non e' piu' il 
+        // secondo preheader, ma il primo.
+
+        PN->setIncomingBlock(0, BB_preheader0);
+        // sposta fisicamente la PHI all'inizio di BB_header0
+        PN->moveBefore(&*BB_header0->getFirstInsertionPt());
+
+        outs() << "Spostata PHI da BB_header1 a BB_header0: " << *PN << "\n";
+    } else {
+        break; // Ricorda: le PHI sono ovviamente tutte all'inizio, se ci sono
+    }
+}   
+
+    BB_header1->dropAllReferences(); 
+    BB_header1->eraseFromParent();
+  
+    BB_preheader1->dropAllReferences(); 
+    BB_preheader1->eraseFromParent();
+
+    dumpCFGToDotFile(*F, "dotfile/cfg_loop_MOD.dot");
+
   }
   else{
     return false;

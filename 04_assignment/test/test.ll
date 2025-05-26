@@ -7,84 +7,66 @@ target triple = "x86_64-pc-linux-gnu"
 @.str.1 = private unnamed_addr constant [14 x i8] c"Prodotto: %d\0A\00", align 1
 
 ; Function Attrs: noinline nounwind uwtable
-define dso_local i32 @test_arr(i32 noundef %0) #0 {
+define dso_local void @test(i32 noundef %0) #0 {
   %2 = alloca i32, align 4
   %3 = alloca i32, align 4
   %4 = alloca i32, align 4
   %5 = alloca i32, align 4
-  %6 = alloca i32, align 4
-  store i32 %0, ptr %3, align 4
+  store i32 %0, ptr %2, align 4
+  store i32 0, ptr %3, align 4
   store i32 0, ptr %4, align 4
-  store i32 0, ptr %5, align 4
-  store i32 1, ptr %6, align 4
+  store i32 1, ptr %5, align 4
+  br label %6
+
+6:                                                ; preds = %10, %1
   %7 = load i32, ptr %3, align 4
-  %8 = icmp sgt i32 %7, 0
-  br i1 %8, label %9, label %21
+  %8 = load i32, ptr %2, align 4
+  %9 = icmp slt i32 %7, %8
+  br i1 %9, label %10, label %16
 
-9:                                                ; preds = %1
-  br label %10
-
-10:                                               ; preds = %16, %9
-  %11 = load i32, ptr %4, align 4
-  %12 = load i32, ptr %5, align 4
-  %13 = add nsw i32 %12, %11
-  store i32 %13, ptr %5, align 4
+10:                                               ; preds = %6
+  %11 = load i32, ptr %3, align 4
+  %12 = add nsw i32 %11, 1
+  store i32 %12, ptr %3, align 4
+  %13 = load i32, ptr %3, align 4
   %14 = load i32, ptr %4, align 4
-  %15 = add nsw i32 %14, 1
+  %15 = add nsw i32 %14, %13
   store i32 %15, ptr %4, align 4
-  br label %16
+  br label %6, !llvm.loop !6
 
-16:                                               ; preds = %10
-  %17 = load i32, ptr %4, align 4
+16:                                               ; preds = %6
+  store i32 0, ptr %3, align 4
+  br label %17
+
+17:                                               ; preds = %21, %16
   %18 = load i32, ptr %3, align 4
-  %19 = icmp slt i32 %17, %18
-  br i1 %19, label %10, label %20, !llvm.loop !6
+  %19 = load i32, ptr %2, align 4
+  %20 = icmp slt i32 %18, %19
+  br i1 %20, label %21, label %27
 
-20:                                               ; preds = %16
-  br label %21
-
-21:                                               ; preds = %20, %1
-  store i32 0, ptr %4, align 4
+21:                                               ; preds = %17
   %22 = load i32, ptr %3, align 4
-  %23 = icmp sgt i32 %22, 0
-  br i1 %23, label %24, label %36
+  %23 = add nsw i32 %22, 1
+  store i32 %23, ptr %3, align 4
+  %24 = load i32, ptr %3, align 4
+  %25 = load i32, ptr %5, align 4
+  %26 = mul nsw i32 %25, %24
+  store i32 %26, ptr %5, align 4
+  br label %17, !llvm.loop !8
 
-24:                                               ; preds = %21
-  br label %25
-
-25:                                               ; preds = %31, %24
-  %26 = load i32, ptr %4, align 4
-  %27 = add nsw i32 %26, 1
-  store i32 %27, ptr %4, align 4
+27:                                               ; preds = %17
   %28 = load i32, ptr %4, align 4
-  %29 = load i32, ptr %6, align 4
-  %30 = mul nsw i32 %29, %28
-  store i32 %30, ptr %6, align 4
-  br label %31
-
-31:                                               ; preds = %25
-  %32 = load i32, ptr %4, align 4
-  %33 = load i32, ptr %3, align 4
-  %34 = icmp slt i32 %32, %33
-  br i1 %34, label %25, label %35, !llvm.loop !8
-
-35:                                               ; preds = %31
-  br label %36
-
-36:                                               ; preds = %35, %21
-  %37 = load i32, ptr %5, align 4
-  %38 = call i32 (ptr, ...) @printf(ptr noundef @.str, i32 noundef %37)
-  %39 = load i32, ptr %6, align 4
-  %40 = call i32 (ptr, ...) @printf(ptr noundef @.str.1, i32 noundef %39)
-  %41 = load i32, ptr %2, align 4
-  ret i32 %41
+  %29 = call i32 (ptr, ...) @printf(ptr noundef @.str, i32 noundef %28)
+  %30 = load i32, ptr %5, align 4
+  %31 = call i32 (ptr, ...) @printf(ptr noundef @.str.1, i32 noundef %30)
+  ret void
 }
 
 declare i32 @printf(ptr noundef, ...) #1
 
 ; Function Attrs: noinline nounwind uwtable
 define dso_local void @main() #0 {
-  %1 = call i32 @test_arr(i32 noundef 4)
+  call void @test(i32 noundef 4)
   ret void
 }
 

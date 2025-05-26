@@ -7,61 +7,45 @@ target triple = "x86_64-pc-linux-gnu"
 @.str.1 = private unnamed_addr constant [14 x i8] c"Prodotto: %d\0A\00", align 1
 
 ; Function Attrs: noinline nounwind uwtable
-define dso_local i32 @test_arr(i32 noundef %0) #0 {
-  %2 = icmp sgt i32 %0, 0
-  br i1 %2, label %3, label %10
+define dso_local void @test(i32 noundef %0) #0 {
+  br label %2
 
-3:                                                ; preds = %1
-  br label %4
+2:                                                ; preds = %4, %1
+  %.02 = phi i32 [ 0, %1 ], [ %6, %4 ]
+  %.01 = phi i32 [ 0, %1 ], [ %5, %4 ]
+  %3 = icmp slt i32 %.01, %0
+  br i1 %3, label %4, label %7
 
-4:                                                ; preds = %7, %3
-  %.03 = phi i32 [ 0, %3 ], [ %6, %7 ]
-  %.01 = phi i32 [ 0, %3 ], [ %5, %7 ]
-  %5 = add nsw i32 %.01, %.03
-  %6 = add nsw i32 %.03, 1
-  br label %7
+4:                                                ; preds = %2
+  %5 = add nsw i32 %.01, 1
+  %6 = add nsw i32 %.02, %5
+  br label %2, !llvm.loop !6
 
-7:                                                ; preds = %4
-  %8 = icmp slt i32 %6, %0
-  br i1 %8, label %4, label %9, !llvm.loop !6
+7:                                                ; preds = %2
+  br label %8
 
-9:                                                ; preds = %7
-  br label %10
+8:                                                ; preds = %10, %7
+  %.1 = phi i32 [ 0, %7 ], [ %11, %10 ]
+  %.0 = phi i32 [ 1, %7 ], [ %12, %10 ]
+  %9 = icmp slt i32 %.1, %0
+  br i1 %9, label %10, label %13
 
-10:                                               ; preds = %9, %1
-  %.12 = phi i32 [ %5, %9 ], [ 0, %1 ]
-  %11 = icmp sgt i32 %0, 0
-  br i1 %11, label %12, label %19
+10:                                               ; preds = %8
+  %11 = add nsw i32 %.1, 1
+  %12 = mul nsw i32 %.0, %11
+  br label %8, !llvm.loop !8
 
-12:                                               ; preds = %10
-  br label %13
-
-13:                                               ; preds = %16, %12
-  %.14 = phi i32 [ 0, %12 ], [ %14, %16 ]
-  %.0 = phi i32 [ 1, %12 ], [ %15, %16 ]
-  %14 = add nsw i32 %.14, 1
-  %15 = mul nsw i32 %.0, %14
-  br label %16
-
-16:                                               ; preds = %13
-  %17 = icmp slt i32 %14, %0
-  br i1 %17, label %13, label %18, !llvm.loop !8
-
-18:                                               ; preds = %16
-  br label %19
-
-19:                                               ; preds = %18, %10
-  %.1 = phi i32 [ %15, %18 ], [ 1, %10 ]
-  %20 = call i32 (ptr, ...) @printf(ptr noundef @.str, i32 noundef %.12)
-  %21 = call i32 (ptr, ...) @printf(ptr noundef @.str.1, i32 noundef %.1)
-  ret i32 undef
+13:                                               ; preds = %8
+  %14 = call i32 (ptr, ...) @printf(ptr noundef @.str, i32 noundef %.02)
+  %15 = call i32 (ptr, ...) @printf(ptr noundef @.str.1, i32 noundef %.0)
+  ret void
 }
 
 declare i32 @printf(ptr noundef, ...) #1
 
 ; Function Attrs: noinline nounwind uwtable
 define dso_local void @main() #0 {
-  %1 = call i32 @test_arr(i32 noundef 4)
+  call void @test(i32 noundef 4)
   ret void
 }
 
