@@ -59,13 +59,18 @@ Distinguiamo due casi:
 bool clear_intermediate_bb(BasicBlock* bb, bool is_guarded) {
   int branch_count = 0;
   int icmp_count = 0;
+  int phi_count = 0;
 
   for (Instruction &I : *bb) {
     if (isa<BranchInst>(I)) {
       branch_count++;
     } else if (isa<ICmpInst>(I)) {
       icmp_count++;
-    } else{
+    } 
+    else if(isa<PHINode>(I)){
+      continue;
+    }
+    else {
       return false;
     }
   }
@@ -461,7 +466,101 @@ int checkLatchBranchType(BasicBlock *Latch) {
   }
 }
 
-bool fuse_loop(Loop* L0, Loop* L1, ScalarEvolution &SE){
+bool fuse_loop(Loop* L0, Loop* L1, ScalarEvolution &SE, AdjacencyStatus adj_status){
+  Function *F = L0->getHeader()->getParent();
+
+  dumpCFGToDotFile(*F, "dotfile/cfg_loop_NO_MOD.dot");
+
+
+  // Ora ricaviamo tutti i blocchi che ci serviranno dopo per la modifica del cfg
+  BasicBlock* BB_latch0 = L0->getLoopLatch();
+  BasicBlock* BB_body0 = *pred_begin(BB_latch0);  // assumendo un solo predecessore
+  BasicBlock* BB_preheader0 = L0->getLoopPreheader();
+  BasicBlock* BB_header0 = L0->getHeader();
+
+  BasicBlock* BB_latch1 = L1->getLoopLatch();
+  BasicBlock* BB_body1 = *pred_begin(BB_latch1);  // assumendo un solo predecessore  
+  BasicBlock* BB_preheader1 = L1->getLoopPreheader();
+  
+  BasicBlock* BB_exit1 = L1->getExitBlock();
+
+  // outs() << "Preheader0: " << *BB_preheader0 << "\n";
+  // outs() << "Header0: " << *BB_header0 << "\n";
+  // outs() << "Latch0: " << *BB_latch0 << "\n";
+
+  // outs() << "Latch1: " << *BB_latch1 << "\n";
+   
+  int branch_latch_0 = checkLatchBranchType(BB_latch0);
+  
+  if (branch_latch_0 == 1) {
+    if(adj_status==GuardedAdjacent){
+
+      BasicBlock* BB_guard0 = L0->getLoopGuardBranch()->getParent();
+      BasicBlock* BB_guard1 = L1->getLoopGuardBranch()->getParent();
+
+      BranchInst *guard_term0 = dyn_cast<BranchInst>(BB_guard0->getTerminator());
+      BranchInst *guard_term1 = dyn_cast<BranchInst>(BB_guard1->getTerminator());
+      outs() << "Guard0 before: " << *guard_term0 << "\n";
+      outs() << "Guard1: " << *guard_term1 << "\n";
+
+    dumpCFGToDotFile(*F, "dotfile/cfg_loop_MOD.dot");
+
+
+      BasicBlock* BB_exit = guard_term1->getSuccessor(1);
+      guard_term0->setSuccessor(1, BB_exit);
+
+
+
+      outs() << "Guard0 after: " << *guard_term0 << "\n";
+      for (Instruction &I : *BB_exit) {
+        if (PHINode *PN = dyn_cast<PHINode>(&I)) {
+            for (unsigned i = 0; i < PN->getNumIncomingValues(); ++i) {
+                if (PN->getIncomingBlock(i) == BB_guard1) {
+                    PN->setIncomingBlock(i, BB_guard0);
+                    outs() << "Modificata PHI da guard1 a guard0: " << *PN << "\n";
+                }
+            }
+        } else {
+            break; 
+        }
+  
+    }
+    for (auto it = BB_guard1->begin(); it != BB_guard1->end(); ) {
+      if (PHINode *PN = dyn_cast<PHINode>(&*it)) {
+          ++it; // avanza prima di spostare, per non invalidare l'iteratore
+  
+
+          PN->setIncomingBlock(0, BB_exit1);
+          PN->moveBefore(&*BB_exit->getFirstInsertionPt());
+  
+          outs() << "Spostata PHI da BB_body1 a BB_header0: " << *PN << "\n";
+      } else {
+          break; // Ricorda: le PHI sono ovviamente tutte all'inizio, se ci sono
+      }
+  }
+        // Ora puliamo il CFG dai blocchi non piu' utilizzati
+        
+        BasicBlock *BB_pred_guard1 = *pred_begin(BB_guard1); 
+        outs() << "BB prima di guard1: " << *BB_pred_guard1 <<"\n";
+        outs() << "BB guard1: " << *BB_guard1 <<"\n";
+
+        BranchInst *latch_term0 = dyn_cast<BranchInst>(BB_latch0->getTerminator());
+        latch_term0->setSuccessor(1, guard_term1->getSuccessor(0));
+        
+        BB_guard1->dropAllReferences(); 
+        BB_pred_guard1->dropAllReferences(); 
+      
+        BB_guard1->eraseFromParent();
+        BB_pred_guard1->eraseFromParent();
+        // outs() << "HERE\n";
+  //         Function *F = BB_header0->getParent();
+  // outs() << "\n\n\n";
+  // F->print(llvm::outs());
+
+
+    
+    }
+      // Modifica usi Induction Variable
   PHINode* indVar0 = L0->getInductionVariable(SE);
   PHINode* indVar1 = L1->getInductionVariable(SE);
   outs() << "Ind var0 " << *indVar0 << "\n";
@@ -470,84 +569,69 @@ bool fuse_loop(Loop* L0, Loop* L1, ScalarEvolution &SE){
   indVar1->eraseFromParent();
 
 
-
-  BasicBlock* BB_latch0 = L0->getLoopLatch();
-  BasicBlock* BB_body0 = *pred_begin(BB_latch0);  // assumendo un solo predecessore
-  BasicBlock* BB_preheader0 = L0->getLoopPreheader();
-  
-  dumpCFGToDotFile(*BB_latch0->getParent(), "./dotfile/cfg_loop_fusion_m.dot");
-
-  BasicBlock* BB_latch1 = L1->getLoopLatch();
-  BasicBlock* BB_body1 = *pred_begin(BB_latch1);  // assumendo un solo predecessore
-  
-  BasicBlock* BB_header0 = L0->getHeader();
-  BasicBlock* BB_preheader1 = L1->getLoopPreheader();
-  
-  outs() << "Pre-header0: " << *L0->getLoopPreheader();
-  outs() << "\nHeader0: " << *BB_header0 << "\n";
-  outs() << "Latch0: " << *BB_latch0 << "\n";
-  outs() << "Latch2: " << *BB_latch1 << "\n";
-  
-  int branch_latch_0 = checkLatchBranchType(BB_latch0);
-  
-  if (branch_latch_0 == 1) {
-      // Modifica la terminazione del body0 per puntare a body1
-      BranchInst *BodyTerm0 = dyn_cast<BranchInst>(BB_body0->getTerminator());
-      outs() << "BB terminator body0: " << *BodyTerm0 << "\n";
+      // Modifica la terminazione del body0 per puntare a body1 anziche a latch0
+      BranchInst *body_term0 = dyn_cast<BranchInst>(BB_body0->getTerminator());
+      outs() << "BB terminator body0: " << *body_term0 << "\n";
       outs() << "BB body1: " << *BB_body1 << "\n";
       
-      BodyTerm0->setSuccessor(0, BB_body1);
-      outs() << "Modificato il branch incondizionato: ora punta a BB_body1.\n";
+      body_term0->setSuccessor(0, BB_body1);
+      outs() << "Modificato il branch incondizionato di BB_body0: ora punta a BB_body1.\n";
   
       // Modifica latch1 per farlo puntare a header0
-      BranchInst *LatchTerm1 = dyn_cast<BranchInst>(BB_latch1->getTerminator());
-      LatchTerm1->setSuccessor(0, BB_header0);
+      BranchInst *latch_term1 = dyn_cast<BranchInst>(BB_latch1->getTerminator());
+      latch_term1->setSuccessor(0, BB_header0);
+      outs() << "Modificato il branch incondizionato di BB_latch1: ora punta a BB_header0.\n";
 
-
-      // ORA MI OCCUPO DELLE PHI
+      outs() << "ALLE PHI CI ARRIVO\n";
+      // Ora bisogna gestire le phi, che devono cambiare
+      // Ci occupiamo prima di quelle nel secondo body
       for (auto it = BB_body1->begin(); it != BB_body1->end(); ) {
         if (PHINode *PN = dyn_cast<PHINode>(&*it)) {
             ++it; // avanza prima di spostare, per non invalidare l'iteratore
     
-                PN->setIncomingBlock(0, BB_preheader0);
-    
+            // Le phi dentro al body del secondo loop devono essere spostate all'header del primo loop, perche' e' diventato anche l'header del
+            // secondo. Dunque bisogna, oltre che appunto spostarle, cambiare un predecessore, perche' il primo predecessore non e' piu' il 
+            // secondo preheader, ma il primo.
+
+            PN->setIncomingBlock(0, BB_preheader0);
             // sposta fisicamente la PHI all'inizio di BB_header0
             PN->moveBefore(&*BB_header0->getFirstInsertionPt());
     
-            outs() << "Spostata PHI in header0: " << *PN << "\n";
+            outs() << "Spostata PHI da BB_body1 a BB_header0: " << *PN << "\n";
         } else {
-            break;
+            break; // Ricorda: le PHI sono ovviamente tutte all'inizio, se ci sono
         }
     }
     
     
-
+    // Ora ci occupiamo di quelle nel primo header, il cui predecessore deve cambiare
     for (Instruction &I : *BB_header0) {
       if (PHINode *PN = dyn_cast<PHINode>(&I)) {
           for (unsigned i = 0; i < PN->getNumIncomingValues(); ++i) {
+            // Invertiamo il predecessore, dove prima era il BB_latch0 che ora non e' piu' un blocco sensato nel CFG,
+            // con il BB_latch1
               if (PN->getIncomingBlock(i) == BB_latch0) {
                   PN->setIncomingBlock(i, BB_latch1);
                   outs() << "Modificata PHI da latch0 a latch1: " << *PN << "\n";
               }
           }
       } else {
-          break;
+          break; 
       }
 
   }
-  outs() << "Latch 0 : " << *BB_latch0 << "\n";
+
+  outs() << "Latch0 : " << *BB_latch0 << "\n";
   outs() << "Preheader1 : " << *BB_preheader1 << "\n";
 
+  // Ora puliamo il CFG dai blocchi non piu' utilizzati
   BB_latch0->dropAllReferences(); 
   BB_latch0->eraseFromParent();
-  // outs() << "here2\n";
-
 
   BB_preheader1->dropAllReferences(); 
   BB_preheader1->eraseFromParent();
-  // Function *F = BB_header0->getParent();
-  // outs() << "\n\n\n";
-  // F->print(llvm::outs());
+  dumpCFGToDotFile(*F, "dotfile/cfg_loop_MOD.dot");
+
   }
   
 
@@ -613,7 +697,7 @@ bool analyze_loop(LoopInfo &LI, DominatorTree& DT, PostDominatorTree& PDT, Scala
     if (!printCheckResult(no_negative_dependencies(L0, L1, DI, SE), "assenza dipendenze negative", 4)) continue;
   
     printSeparator("Tutti i check superati, procedo alla fusion");
-    fuse_loop(L0, L1, SE);
+    fuse_loop(L0, L1, SE, adj_status);
     modified = true;
   }
   

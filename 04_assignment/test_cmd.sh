@@ -16,10 +16,15 @@ clang -Xclang -disable-O0-optnone -O0 -S -emit-llvm "$FILE" -o "$BASENAME.ll" ||
 # Applica mem2reg
 opt -S -p mem2reg "$BASENAME.ll" -o "$BASENAME.m2r.ll" || exit 1
 
-# Applica il tuo pass cmli
-opt -load-pass-plugin ./build/libLFOpt.so -passes=loopfusion "$BASENAME.m2r.ll" -S -o "$BASENAME.optimized.ll" || exit 1
+# Applica il tuo pass cmli, ma NON uscire in caso di errore
+set +e
+opt -load-pass-plugin ./build/libLFOpt.so -passes=loopfusion "$BASENAME.m2r.ll" -S -o "$BASENAME.optimized.ll"
+set -e
 
-echo "Ottimizzazione completata: $BASENAME.optimized.ll"
+# Esegui comunque la generazione dei grafi
+dot -Tpng ./dotfile/cfg_loop_NO_MOD.dot -o ./dotfile/cfg_loop_fusion_NO_MOD.png
+dot -Tpng ./dotfile/cfg_loop_MOD.dot -o ./dotfile/cfg_loop_fusion_MOD.png
 
-dot -Tpng ./dotfile/cfg_loop_fusion_m.dot -o ./dotfile/cfg_loop_fusion_m.png
-dot -Tpng ./dotfile/cfg_loop_fusion.dot -o ./dotfile/cfg_loop_fusion_10.png
+rm ./dotfile/*.dot
+
+echo "Script completato"

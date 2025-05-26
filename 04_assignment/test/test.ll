@@ -7,95 +7,89 @@ target triple = "x86_64-pc-linux-gnu"
 @.str.1 = private unnamed_addr constant [14 x i8] c"Prodotto: %d\0A\00", align 1
 
 ; Function Attrs: noinline nounwind uwtable
-define dso_local void @test_arr(i32 noundef %0) #0 {
+define dso_local i32 @test_arr(i32 noundef %0) #0 {
   %2 = alloca i32, align 4
   %3 = alloca i32, align 4
   %4 = alloca i32, align 4
   %5 = alloca i32, align 4
-  %6 = alloca ptr, align 8
-  %7 = alloca i64, align 8
-  store i32 %0, ptr %2, align 4
-  store i32 0, ptr %3, align 4
+  %6 = alloca i32, align 4
+  store i32 %0, ptr %3, align 4
   store i32 0, ptr %4, align 4
-  store i32 1, ptr %5, align 4
-  %8 = load i32, ptr %2, align 4
-  %9 = mul nsw i32 2, %8
-  %10 = zext i32 %9 to i64
-  %11 = call ptr @llvm.stacksave.p0()
-  store ptr %11, ptr %6, align 8
-  %12 = alloca i32, i64 %10, align 16
-  store i64 %10, ptr %7, align 8
-  br label %13
+  store i32 0, ptr %5, align 4
+  store i32 1, ptr %6, align 4
+  %7 = load i32, ptr %3, align 4
+  %8 = icmp sgt i32 %7, 0
+  br i1 %8, label %9, label %21
 
-13:                                               ; preds = %23, %1
-  %14 = load i32, ptr %3, align 4
-  %15 = load i32, ptr %3, align 4
-  %16 = sext i32 %15 to i64
-  %17 = getelementptr inbounds i32, ptr %12, i64 %16
-  store i32 %14, ptr %17, align 4
+9:                                                ; preds = %1
+  br label %10
+
+10:                                               ; preds = %16, %9
+  %11 = load i32, ptr %4, align 4
+  %12 = load i32, ptr %5, align 4
+  %13 = add nsw i32 %12, %11
+  store i32 %13, ptr %5, align 4
+  %14 = load i32, ptr %4, align 4
+  %15 = add nsw i32 %14, 1
+  store i32 %15, ptr %4, align 4
+  br label %16
+
+16:                                               ; preds = %10
+  %17 = load i32, ptr %4, align 4
   %18 = load i32, ptr %3, align 4
-  %19 = add nsw i32 %18, 1
-  store i32 %19, ptr %3, align 4
-  %20 = load i32, ptr %3, align 4
-  %21 = load i32, ptr %4, align 4
-  %22 = add nsw i32 %21, %20
-  store i32 %22, ptr %4, align 4
-  br label %23
+  %19 = icmp slt i32 %17, %18
+  br i1 %19, label %10, label %20, !llvm.loop !6
 
-23:                                               ; preds = %13
-  %24 = load i32, ptr %3, align 4
-  %25 = load i32, ptr %2, align 4
-  %26 = icmp slt i32 %24, %25
-  br i1 %26, label %13, label %27, !llvm.loop !6
+20:                                               ; preds = %16
+  br label %21
 
-27:                                               ; preds = %23
-  store i32 0, ptr %3, align 4
-  br label %28
+21:                                               ; preds = %20, %1
+  store i32 0, ptr %4, align 4
+  %22 = load i32, ptr %3, align 4
+  %23 = icmp sgt i32 %22, 0
+  br i1 %23, label %24, label %36
 
-28:                                               ; preds = %40, %27
-  %29 = load i32, ptr %3, align 4
-  %30 = add nsw i32 %29, 1
-  %31 = sext i32 %30 to i64
-  %32 = getelementptr inbounds i32, ptr %12, i64 %31
-  %33 = load i32, ptr %32, align 4
-  store i32 %33, ptr %4, align 4
-  %34 = load i32, ptr %3, align 4
-  %35 = add nsw i32 %34, 3
-  %36 = load i32, ptr %5, align 4
-  %37 = mul nsw i32 %36, %35
-  store i32 %37, ptr %5, align 4
-  %38 = load i32, ptr %3, align 4
-  %39 = add nsw i32 %38, 1
-  store i32 %39, ptr %3, align 4
-  br label %40
+24:                                               ; preds = %21
+  br label %25
 
-40:                                               ; preds = %28
-  %41 = load i32, ptr %3, align 4
-  %42 = load i32, ptr %2, align 4
-  %43 = icmp slt i32 %41, %42
-  br i1 %43, label %28, label %44, !llvm.loop !8
+25:                                               ; preds = %31, %24
+  %26 = load i32, ptr %4, align 4
+  %27 = add nsw i32 %26, 1
+  store i32 %27, ptr %4, align 4
+  %28 = load i32, ptr %4, align 4
+  %29 = load i32, ptr %6, align 4
+  %30 = mul nsw i32 %29, %28
+  store i32 %30, ptr %6, align 4
+  br label %31
 
-44:                                               ; preds = %40
-  %45 = load i32, ptr %4, align 4
-  %46 = call i32 (ptr, ...) @printf(ptr noundef @.str, i32 noundef %45)
-  %47 = load i32, ptr %5, align 4
-  %48 = call i32 (ptr, ...) @printf(ptr noundef @.str.1, i32 noundef %47)
-  %49 = load ptr, ptr %6, align 8
-  call void @llvm.stackrestore.p0(ptr %49)
+31:                                               ; preds = %25
+  %32 = load i32, ptr %4, align 4
+  %33 = load i32, ptr %3, align 4
+  %34 = icmp slt i32 %32, %33
+  br i1 %34, label %25, label %35, !llvm.loop !8
+
+35:                                               ; preds = %31
+  br label %36
+
+36:                                               ; preds = %35, %21
+  %37 = load i32, ptr %5, align 4
+  %38 = call i32 (ptr, ...) @printf(ptr noundef @.str, i32 noundef %37)
+  %39 = load i32, ptr %6, align 4
+  %40 = call i32 (ptr, ...) @printf(ptr noundef @.str.1, i32 noundef %39)
+  %41 = load i32, ptr %2, align 4
+  ret i32 %41
+}
+
+declare i32 @printf(ptr noundef, ...) #1
+
+; Function Attrs: noinline nounwind uwtable
+define dso_local void @main() #0 {
+  %1 = call i32 @test_arr(i32 noundef 4)
   ret void
 }
 
-; Function Attrs: nocallback nofree nosync nounwind willreturn
-declare ptr @llvm.stacksave.p0() #1
-
-declare i32 @printf(ptr noundef, ...) #2
-
-; Function Attrs: nocallback nofree nosync nounwind willreturn
-declare void @llvm.stackrestore.p0(ptr) #1
-
 attributes #0 = { noinline nounwind uwtable "frame-pointer"="all" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cmov,+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
-attributes #1 = { nocallback nofree nosync nounwind willreturn }
-attributes #2 = { "frame-pointer"="all" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cmov,+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
+attributes #1 = { "frame-pointer"="all" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cmov,+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
 
 !llvm.module.flags = !{!0, !1, !2, !3, !4}
 !llvm.ident = !{!5}

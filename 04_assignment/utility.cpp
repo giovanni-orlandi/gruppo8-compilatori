@@ -1,9 +1,8 @@
 using namespace llvm;
 
+
+/* =================== STAMPA DEL CFG =================== */
 #include "llvm/Support/GraphWriter.h"
-
-using namespace llvm;
-
 template <>
 struct DOTGraphTraits<const Function*> : public DefaultDOTGraphTraits {
   DOTGraphTraits(bool isSimple = false) : DefaultDOTGraphTraits(isSimple) {}
@@ -34,15 +33,9 @@ void dumpCFGToDotFile(Function &F, const std::string &Filename) {
   outs() << "CFG scritto su: " << Filename << "\n";
 }
 
+/* ================================================ */
 
-
-// Utility: controlla se un elemento è nel vettore
-template <typename Container, typename Element>
-bool is_in_container(const Container& container, const Element& elem) {
-    return std::find(container.begin(), container.end(), elem) != container.end();
-}
-
-// Utility: serve per stampare delle linee separatrici
+// Serve per stampare delle linee separatrici
 void printSeparator(StringRef label="", unsigned width = 60) {
   outs().changeColor(raw_ostream::YELLOW, true);
   if (label.empty()) {

@@ -1,4 +1,0 @@
-digraph unnamed {
-
-	Node0x5b1f59a37af0 [shape=record,label="{  call void @test(i32 noundef 5)\n  ret i32 0\n}"];
-}

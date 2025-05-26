@@ -21,36 +21,37 @@
 //     printf("Prodotto: %d\n", prodotto);
 // }
 
-void test_arr(int n){
+int test_arr(int n){
     int i = 0;
     int somma = 0;
     int prodotto = 1;
-    int arr[2*n];
-    do {
-        // somma = arr[i];
-        arr[i] = i;
 
-        i++;
+    if(n > 0){
+    do {
         somma +=i;
-    } while(i < n);
-
-    i = 0;
-    do {
-        // if(i != 0){s
-            somma = arr[i+1];
-
-        // arr[i] = i;
-            prodotto *= i+3;
-        // }
         i++;
-    } while(i < n);
 
+    } while(i < n);
+    }
+    i = 0;
+
+    if(n > 0){
+
+    do {
+        i++;
+
+            prodotto *= i;
+    } while(i < n);
+    }
+    
+    
+    // if(somma > 0){
+    //     a++;
+    // }
     printf("Somma: %d\n", somma);
     printf("Prodotto: %d\n", prodotto);
 }
 
-// int main(){
-//     int n = 5;
-//     test(n);
-//     return 0;
-// }
+void main(){
+    test_arr(4);
+}

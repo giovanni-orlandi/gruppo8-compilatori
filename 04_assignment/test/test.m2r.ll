@@ -7,64 +7,66 @@ target triple = "x86_64-pc-linux-gnu"
 @.str.1 = private unnamed_addr constant [14 x i8] c"Prodotto: %d\0A\00", align 1
 
 ; Function Attrs: noinline nounwind uwtable
-define dso_local void @test_arr(i32 noundef %0) #0 {
-  %2 = mul nsw i32 2, %0
-  %3 = zext i32 %2 to i64
-  %4 = call ptr @llvm.stacksave.p0()
-  %5 = alloca i32, i64 %3, align 16
-  br label %6
+define dso_local i32 @test_arr(i32 noundef %0) #0 {
+  %2 = icmp sgt i32 %0, 0
+  br i1 %2, label %3, label %10
 
-6:                                                ; preds = %11, %1
-  %.02 = phi i32 [ 0, %1 ], [ %10, %11 ]
-  %.01 = phi i32 [ 0, %1 ], [ %9, %11 ]
-  %7 = sext i32 %.01 to i64
-  %8 = getelementptr inbounds i32, ptr %5, i64 %7
-  store i32 %.01, ptr %8, align 4
-  %9 = add nsw i32 %.01, 1
-  %10 = add nsw i32 %.02, %9
-  br label %11
+3:                                                ; preds = %1
+  br label %4
 
-11:                                               ; preds = %6
-  %12 = icmp slt i32 %9, %0
-  br i1 %12, label %6, label %13, !llvm.loop !6
+4:                                                ; preds = %7, %3
+  %.03 = phi i32 [ 0, %3 ], [ %6, %7 ]
+  %.01 = phi i32 [ 0, %3 ], [ %5, %7 ]
+  %5 = add nsw i32 %.01, %.03
+  %6 = add nsw i32 %.03, 1
+  br label %7
 
-13:                                               ; preds = %11
-  br label %14
+7:                                                ; preds = %4
+  %8 = icmp slt i32 %6, %0
+  br i1 %8, label %4, label %9, !llvm.loop !6
 
-14:                                               ; preds = %22, %13
-  %.1 = phi i32 [ 0, %13 ], [ %21, %22 ]
-  %.0 = phi i32 [ 1, %13 ], [ %20, %22 ]
-  %15 = add nsw i32 %.1, 1
-  %16 = sext i32 %15 to i64
-  %17 = getelementptr inbounds i32, ptr %5, i64 %16
-  %18 = load i32, ptr %17, align 4
-  %19 = add nsw i32 %.1, 3
-  %20 = mul nsw i32 %.0, %19
-  %21 = add nsw i32 %.1, 1
-  br label %22
+9:                                                ; preds = %7
+  br label %10
 
-22:                                               ; preds = %14
-  %23 = icmp slt i32 %21, %0
-  br i1 %23, label %14, label %24, !llvm.loop !8
+10:                                               ; preds = %9, %1
+  %.12 = phi i32 [ %5, %9 ], [ 0, %1 ]
+  %11 = icmp sgt i32 %0, 0
+  br i1 %11, label %12, label %19
 
-24:                                               ; preds = %22
-  %25 = call i32 (ptr, ...) @printf(ptr noundef @.str, i32 noundef %18)
-  %26 = call i32 (ptr, ...) @printf(ptr noundef @.str.1, i32 noundef %20)
-  call void @llvm.stackrestore.p0(ptr %4)
+12:                                               ; preds = %10
+  br label %13
+
+13:                                               ; preds = %16, %12
+  %.14 = phi i32 [ 0, %12 ], [ %14, %16 ]
+  %.0 = phi i32 [ 1, %12 ], [ %15, %16 ]
+  %14 = add nsw i32 %.14, 1
+  %15 = mul nsw i32 %.0, %14
+  br label %16
+
+16:                                               ; preds = %13
+  %17 = icmp slt i32 %14, %0
+  br i1 %17, label %13, label %18, !llvm.loop !8
+
+18:                                               ; preds = %16
+  br label %19
+
+19:                                               ; preds = %18, %10
+  %.1 = phi i32 [ %15, %18 ], [ 1, %10 ]
+  %20 = call i32 (ptr, ...) @printf(ptr noundef @.str, i32 noundef %.12)
+  %21 = call i32 (ptr, ...) @printf(ptr noundef @.str.1, i32 noundef %.1)
+  ret i32 undef
+}
+
+declare i32 @printf(ptr noundef, ...) #1
+
+; Function Attrs: noinline nounwind uwtable
+define dso_local void @main() #0 {
+  %1 = call i32 @test_arr(i32 noundef 4)
   ret void
 }
 
-; Function Attrs: nocallback nofree nosync nounwind willreturn
-declare ptr @llvm.stacksave.p0() #1
-
-declare i32 @printf(ptr noundef, ...) #2
-
-; Function Attrs: nocallback nofree nosync nounwind willreturn
-declare void @llvm.stackrestore.p0(ptr) #1
-
 attributes #0 = { noinline nounwind uwtable "frame-pointer"="all" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cmov,+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
-attributes #1 = { nocallback nofree nosync nounwind willreturn }
-attributes #2 = { "frame-pointer"="all" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cmov,+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
+attributes #1 = { "frame-pointer"="all" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cmov,+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
 
 !llvm.module.flags = !{!0, !1, !2, !3, !4}
 !llvm.ident = !{!5}
