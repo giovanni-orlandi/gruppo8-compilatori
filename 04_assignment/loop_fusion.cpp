@@ -527,8 +527,7 @@ bool fuse_loop(Loop *L0, Loop *L1, ScalarEvolution &SE,
   // Ora ricaviamo tutti i blocchi che ci serviranno dopo per la modifica del
   // cfg
   BasicBlock *BB_latch0 = L0->getLoopLatch();
-  BasicBlock *BB_body0 =
-      *pred_begin(BB_latch0);  // assumendo un solo predecessore
+  BasicBlock *BB_body0 = *pred_begin(BB_latch0);  // assumendo un solo predecessore
   BasicBlock *BB_preheader0 = L0->getLoopPreheader();
   BasicBlock *BB_header0 = L0->getHeader();
   BasicBlock *BB_header1 = L1->getHeader();
