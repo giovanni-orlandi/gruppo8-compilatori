@@ -524,18 +524,30 @@ bool fuse_loop(Loop *L0, Loop *L1, ScalarEvolution &SE,
 
   dumpCFGToDotFile(*F, "dotfile/cfg_loop_NO_MOD.dot");
 
+  // Modifica usi Induction Variable
+  PHINode *indVar0 = L0->getInductionVariable(SE);
+  PHINode *indVar1 = L1->getInductionVariable(SE);
+  outs() << "Ind var0 " << *indVar0 << "\n";
+  outs() << "Ind var1 " << *indVar1 << "\n";
+  indVar1->replaceAllUsesWith(indVar0);
+  indVar1->eraseFromParent();
+      
+
   // Ora ricaviamo tutti i blocchi che ci serviranno dopo per la modifica del
   // cfg
   BasicBlock *BB_latch0 = L0->getLoopLatch();
+
   BasicBlock *BB_body0 = *pred_begin(BB_latch0);  // assumendo un solo predecessore
+  
   BasicBlock *BB_preheader0 = L0->getLoopPreheader();
   BasicBlock *BB_header0 = L0->getHeader();
-  BasicBlock *BB_header1 = L1->getHeader();
 
   BasicBlock *BB_latch1 = L1->getLoopLatch();
-  BasicBlock *BB_body1 =
-      *pred_begin(BB_latch1);  // assumendo un solo predecessore
+  
+  BasicBlock *BB_body1 =*pred_begin(BB_latch1);  // assumendo un solo predecessore
+  
   BasicBlock *BB_preheader1 = L1->getLoopPreheader();
+  BasicBlock *BB_header1 = L1->getHeader();
 
   BasicBlock *BB_exit1 = L1->getExitBlock();
 
@@ -545,9 +557,12 @@ bool fuse_loop(Loop *L0, Loop *L1, ScalarEvolution &SE,
 
   outs() << "Latch1: " << *BB_latch1 << "\n";
 
-  int branch_latch_0 = checkLatchBranchType(BB_latch0);
+  int is_rotated = checkLatchBranchType(BB_latch0); // TO-DO: modificare guardando semplicemente se e' ruotato con fnz
+    
+  // Caso is_rotated
+  if (is_rotated == 1) {
+    outs() << "Is rotated: " << is_rotated << "\n"; 
 
-  if (branch_latch_0 == 1) {
     if (adj_status == GuardedAdjacent) {
       BasicBlock *BB_guard0 = L0->getLoopGuardBranch()->getParent();
       BasicBlock *BB_guard1 = L1->getLoopGuardBranch()->getParent();
@@ -559,7 +574,7 @@ bool fuse_loop(Loop *L0, Loop *L1, ScalarEvolution &SE,
       outs() << "Guard0 before: " << *guard_term0 << "\n";
       outs() << "Guard1: " << *guard_term1 << "\n";
 
-      dumpCFGToDotFile(*F, "dotfile/cfg_loop_MOD.dot");
+      // dumpCFGToDotFile(*F, "dotfile/cfg_loop_MOD.dot");
 
       BasicBlock *BB_exit = guard_term1->getSuccessor(1);
       guard_term0->setSuccessor(1, BB_exit);
@@ -584,7 +599,7 @@ bool fuse_loop(Loop *L0, Loop *L1, ScalarEvolution &SE,
           PN->setIncomingBlock(0, BB_exit1);
           PN->moveBefore(&*BB_exit->getFirstInsertionPt());
 
-          outs() << "Spostata PHI da BB_body1 a BB_header0: " << *PN << "\n";
+          outs() << "Spostata PHI da BB_guard1 a BB_exit: " << *PN << "\n";
         } else {
           break;  // Ricorda: le PHI sono ovviamente tutte all'inizio, se ci
                   // sono
@@ -605,38 +620,33 @@ bool fuse_loop(Loop *L0, Loop *L1, ScalarEvolution &SE,
 
       BB_guard1->eraseFromParent();
       BB_pred_guard1->eraseFromParent();
-      // outs() << "HERE\n";
-      //         Function *F = BB_header0->getParent();
-      // outs() << "\n\n\n";
-      // F->print(llvm::outs());
+;
     }
-    // Modifica usi Induction Variable
-    PHINode *indVar0 = L0->getInductionVariable(SE);
-    PHINode *indVar1 = L1->getInductionVariable(SE);
-    outs() << "Ind var0 " << *indVar0 << "\n";
-    outs() << "Ind var1 " << *indVar1 << "\n";
-    indVar1->replaceAllUsesWith(indVar0);
-    indVar1->eraseFromParent();
+
+    BasicBlock *BB_body_start0 = L0->getHeader();
+    BasicBlock *BB_body_end0 = *pred_begin(BB_latch0);
+
+    BasicBlock *BB_body_start1 = L1->getHeader();
+    BasicBlock *BB_body_end1 = *pred_begin(BB_latch1);
 
     // Modifica la terminazione del body0 per puntare a body1 anziche a latch0
-    BranchInst *body_term0 = dyn_cast<BranchInst>(BB_body0->getTerminator());
+    BranchInst *body_term0 = dyn_cast<BranchInst>(BB_body_end0->getTerminator());
     outs() << "BB terminator body0: " << *body_term0 << "\n";
-    outs() << "BB body1: " << *BB_body1 << "\n";
+    // outs() << "BB body_end1: " << *BB_body_end1 << "\n";
 
-    body_term0->setSuccessor(0, BB_body1);
-    outs() << "Modificato il branch incondizionato di BB_body0: ora punta a "
-              "BB_body1.\n";
+    body_term0->setSuccessor(0, BB_body_start1);
+    outs() << "Modificato il branch incondizionato di BB_body_end0: ora punta a "
+              "BB_body_start1.\n";
 
-    // Modifica latch1 per farlo puntare a header0
+    // Modifica latch1 per farlo puntare a BB_body_start0
     BranchInst *latch_term1 = dyn_cast<BranchInst>(BB_latch1->getTerminator());
-    latch_term1->setSuccessor(0, BB_header0);
+    latch_term1->setSuccessor(0, BB_body_start0);
     outs() << "Modificato il branch incondizionato di BB_latch1: ora punta a "
-              "BB_header0.\n";
+              "BB_body_start0.\n";
 
-    outs() << "ALLE PHI CI ARRIVO\n";
     // Ora bisogna gestire le phi, che devono cambiare
     // Ci occupiamo prima di quelle nel secondo body
-    for (auto it = BB_body1->begin(); it != BB_body1->end();) {
+    for (auto it = BB_body_start1->begin(); it != BB_body_start1->end();) {
       if (PHINode *PN = dyn_cast<PHINode>(&*it)) {
         ++it;  // avanza prima di spostare, per non invalidare l'iteratore
 
@@ -648,9 +658,9 @@ bool fuse_loop(Loop *L0, Loop *L1, ScalarEvolution &SE,
 
         PN->setIncomingBlock(0, BB_preheader0);
         // sposta fisicamente la PHI all'inizio di BB_header0
-        PN->moveBefore(&*BB_header0->getFirstInsertionPt());
+        PN->moveBefore(&*BB_body_start0->getFirstInsertionPt());
 
-        outs() << "Spostata PHI da BB_body1 a BB_header0: " << *PN << "\n";
+        outs() << "Spostata PHI da BB_body_start1 a BB_body_start0: " << *PN << "\n";
       } else {
         break;  // Ricorda: le PHI sono ovviamente tutte all'inizio, se ci sono
       }
@@ -658,7 +668,7 @@ bool fuse_loop(Loop *L0, Loop *L1, ScalarEvolution &SE,
 
     // Ora ci occupiamo di quelle nel primo header, il cui predecessore deve
     // cambiare
-    for (Instruction &I : *BB_header0) {
+    for (Instruction &I : *BB_body_start0) {
       if (PHINode *PN = dyn_cast<PHINode>(&I)) {
         for (unsigned i = 0; i < PN->getNumIncomingValues(); ++i) {
           // Invertiamo il predecessore, dove prima era il BB_latch0 che ora non
@@ -682,11 +692,15 @@ bool fuse_loop(Loop *L0, Loop *L1, ScalarEvolution &SE,
 
     BB_preheader1->dropAllReferences();
     BB_preheader1->eraseFromParent();
-    dumpCFGToDotFile(*F, "dotfile/cfg_loop_MOD.dot");
+
+    outs() << "\n\n\n\n\n\n";
+    F->print(outs());
+    outs() << "\n\n\n\n\n\n";
+    // dumpCFGToDotFile(*F, "dotfile/A_cfg_loop_MOD.dot");
 
   }
 
-  else if (branch_latch_0 == 2) {
+  else if (is_rotated == 2) {
     BranchInst *body_term0 = dyn_cast<BranchInst>(BB_latch0->getTerminator());
     body_term0->setSuccessor(0, BB_latch1);
 
@@ -737,11 +751,13 @@ bool fuse_loop(Loop *L0, Loop *L1, ScalarEvolution &SE,
     BB_preheader1->dropAllReferences();
     BB_preheader1->eraseFromParent();
 
-    dumpCFGToDotFile(*F, "dotfile/cfg_loop_MOD.dot");
 
   } else {
     return false;
   }
+
+  dumpCFGToDotFile(*F, "dotfile/cfg_loop_MOD.dot");
+
 
   return false;
 }
@@ -764,7 +780,7 @@ bool printCheckResult(bool condition, const std::string &message,
 Funzione da cui parte l'analisi, chiama le varie funzioni ausiliarie per i task
 e passi dell'algoritmo.
 */
-bool analyze_loop(Function &F, LoopInfo &LI, DominatorTree &DT,
+bool analyze_loop(Function &F, FunctionAnalysisManager &AM, LoopInfo &LI, DominatorTree &DT,
                   PostDominatorTree &PDT, ScalarEvolution &SE,
                   DependenceInfo &DI) {
   bool modified_any = false;
@@ -825,6 +841,8 @@ bool analyze_loop(Function &F, LoopInfo &LI, DominatorTree &DT,
     PDT.recalculate(F);
     LI.releaseMemory();
     LI.analyze(DT);
+    
+    SE = AM.getResult<ScalarEvolutionAnalysis>(F);
   }
 
   printSeparator("Fine ottimizzazione globale Loop Fusion");

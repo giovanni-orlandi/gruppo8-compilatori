@@ -34,9 +34,12 @@ struct LFOpt : PassInfoMixin<LFOpt> {
     DependenceInfo &DI = AM.getResult<DependenceAnalysis>(F);
 
     // dumpCFGToDotFile(F, "./dotfile/cfg_loop_fusion10.dot");
-
-    modified = analyze_loop(F, LI, DT, PDT, SE, DI);
-
+    try{
+      modified = analyze_loop(F, AM, LI, DT, PDT, SE, DI);
+    }
+    catch(...){
+      outs() << "Errore durante l'ottimizzazione!\n";
+    }
 
     return modified ? PreservedAnalyses::none() : PreservedAnalyses::all();
     
