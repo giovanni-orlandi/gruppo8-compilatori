@@ -8,7 +8,6 @@ enum AdjacencyStatus {
         UnguardedAdjacent = 2
 };
 
-
 // =========================== CHECK 1 (Adiacenza) ===============================
 /*
 Funzione che usiamo nel check1 per controllare l'uguaglianza delle due
@@ -54,7 +53,7 @@ mezzo altre istruzioni. Distinguiamo due casi:
 - Se stiamo parlando di due loop guarded dobbiamo avere esattamente 1 branch e 1
 compare
 - In caso di due loop non guarded dobbiamo avere esattamente 1 branch
- */
+*/
 bool clear_intermediate_bb(BasicBlock * bb, bool is_guarded) {
     int branch_count = 0;
     int icmp_count = 0;
@@ -382,7 +381,8 @@ bool check_neg_dep(std::vector < Instruction * > L0_instr,
                 }
             } else {
                 outs() << "\t[✓] Nessuna dipendenza negativa tra " << * I0 << " e " <<
-                    * I1 << "\n";
+                    *
+                    I1 << "\n";
             }
         }
     }
@@ -393,25 +393,25 @@ bool check_neg_dep(std::vector < Instruction * > L0_instr,
 Check 4: Negative Depentencies
 Questo check richiede che non ci siano dipendenze a distanza negativa tra i due
 loop I casi che ci dobbiamo assicurare di evitare sono:
-  - quando il primo loop accede successivamente a valori modificati nelle
+- quando il primo loop accede successivamente a valori modificati nelle
 iterazioni precedenti dal secondo loop es: loop1:
-      ...
-      a = array[i]
-      ...
-    loop2:
-      ...
-      array[i+1] = b
-      ...
+...
+a = array[i]
+...
+loop2:
+...
+array[i+1] = b
+...
 
-  - quando il secondo loop accede ad un valore che nel primo loop verrebbe
+- quando il secondo loop accede ad un valore che nel primo loop verrebbe
 modificato in un'iterazione successiva es: loop1:
-      ...
-      array[i] = a
-      ...
-    loop2:
-      ...
-      b = array[i+3]
-      ...
+...
+array[i] = a
+...
+loop2:
+...
+b = array[i+3]
+...
 Per occuparci di questi due casi dobbiamo trattare le istruzioni che accedono
 alla memoria, che sono le load e le store ed in particolare fare un controllo
 "incrociato":
@@ -525,8 +525,40 @@ void update_iv(Loop * L0, Loop * L1, ScalarEvolution & SE) {
     indVar1 -> eraseFromParent();
 }
 
+void change_phi_incoming(BasicBlock * site, BasicBlock * previous_pred, BasicBlock * new_pred, std::string msg) {
+    for (auto it = site -> begin(); it != site -> end();) {
+        if (PHINode * PN = dyn_cast < PHINode > ( & * it)) {
+            ++it;
+            for (unsigned i = 0; i < PN -> getNumIncomingValues(); ++i) {
+                if (PN -> getIncomingBlock(i) == previous_pred) {
+                    PN -> setIncomingBlock(i, new_pred);
+                    outs() << msg << * PN << "\n";
+                }
+            }
+        } else {
+            break;
+        }
+    }
+}
+
+void move_phi(BasicBlock * from, BasicBlock * to, BasicBlock * pred, std::string msg) {
+    for (auto it = from -> begin(); it != from -> end();) {
+        if (PHINode * PN = dyn_cast < PHINode > ( & * it)) {
+            ++it;
+
+            PN -> setIncomingBlock(0, pred);
+            PN -> moveBefore( & * to -> getFirstInsertionPt());
+
+            outs() << msg << * PN << "\n";
+        } else {
+            break;
+        }
+    }
+}
+
 bool fuse_loop(Loop * L0, Loop * L1, ScalarEvolution & SE,
     AdjacencyStatus adj_status) {
+    std::string msg = "";
     Function * F = L0 -> getHeader() -> getParent();
 
     dumpCFGToDotFile( * F, "dotfile/cfg_loop_NO_MOD.dot");
@@ -581,34 +613,13 @@ bool fuse_loop(Loop * L0, Loop * L1, ScalarEvolution & SE,
 
             // Ovviamente le PHI che sono nel BB di uscita devono essere modificate, se presenti,
             // visto che non avranno piu' come uno dei predecessori la seconda guardia, ma la prima
-            for (Instruction & I: * BB_exit) {
-                if (PHINode * PN = dyn_cast < PHINode > ( & I)) {
-                    for (unsigned i = 0; i < PN -> getNumIncomingValues(); ++i) {
-                        if (PN -> getIncomingBlock(i) == BB_guard1) {
-                            PN -> setIncomingBlock(i, BB_guard0);
-                            outs() << "Modificato BB di incoming da guard1 a guard0 per la PHI in BB_exit: " << * PN << "\n";
-                        }
-                    }
-                } else {
-                    break;
-                }
-            }
+            msg = "Modificato BB di incoming da guard1 a guard0 per la PHI in BB_exit: ";
+            change_phi_incoming(BB_exit, BB_guard1, BB_guard0, msg);
 
             // Dobbiamo gestire anche le PHI che sono nella seconda guardia, perche' essa verra' eliminata
             // Visto che erano quelle all'uscita del primo loop, le mettiamo all'uscita di tutto
-            for (auto it = BB_guard1 -> begin(); it != BB_guard1 -> end();) {
-                if (PHINode * PN = dyn_cast < PHINode > ( & * it)) {
-                    ++it; // avanza prima di spostare, per non invalidare l'iteratore
-
-                    PN -> setIncomingBlock(0, BB_exit1);
-                    PN -> moveBefore( & * BB_exit -> getFirstInsertionPt());
-
-                    outs() << "Spostata PHI da BB_guard1 a BB_exit: " << * PN << "\n";
-                } else {
-                    break; // Ricorda: le PHI sono ovviamente tutte all'inizio, se ci
-                    // sono
-                }
-            }
+            msg = "Spostata PHI da BB_guard1 a BB_exit: ";
+            move_phi(BB_guard1, BB_exit, BB_exit1, msg);
 
             // Ora puliamo il CFG dai blocchi non piu' utilizzati
 
@@ -649,42 +660,20 @@ bool fuse_loop(Loop * L0, Loop * L1, ScalarEvolution & SE,
 
         // Ora bisogna gestire le phi, che devono cambiare
         // Ci occupiamo prima di quelle nel secondo body
-        for (auto it = BB_body_start1 -> begin(); it != BB_body_start1 -> end();) {
-            if (PHINode * PN = dyn_cast < PHINode > ( & * it)) {
-                ++it; // avanza prima di spostare, per non invalidare l'iteratore
-
-                // Le phi dentro al body del secondo loop devono essere spostate
-                // all'header del primo loop, perche' e' diventato anche l'header del
-                // secondo. Dunque bisogna, oltre che appunto spostarle, cambiare un
-                // predecessore, perche' il primo predecessore non e' piu' il secondo
-                // preheader, ma il primo.
-
-                PN -> setIncomingBlock(0, BB_preheader0);
-                // sposta fisicamente la PHI all'inizio di BB_header0
-                PN -> moveBefore( & * BB_body_start0 -> getFirstInsertionPt());
-
-                outs() << "Spostata PHI da BB_body_start1 a BB_body_start0: " << * PN << "\n";
-            } else {
-                break; // Ricorda: le PHI sono ovviamente tutte all'inizio, se ci sono
-            }
-        }
+        // Le phi dentro al body del secondo loop devono essere spostate
+        // all'header del primo loop, perche' e' diventato anche l'header del
+        // secondo. Dunque bisogna, oltre che appunto spostarle, cambiare un
+        // predecessore, perche' il primo predecessore non e' piu' il secondo
+        // preheader, ma il primo.
+        msg = "Spostata PHI da BB_body_start1 a BB_body_start0: ";
+        move_phi(BB_body_start1, BB_body_start0, BB_preheader0, msg);
 
         // Ora ci occupiamo di quelle nel primo header, il cui predecessore deve
         // cambiare
-        for (Instruction & I: * BB_body_start0) {
-            if (PHINode * PN = dyn_cast < PHINode > ( & I)) {
-                for (unsigned i = 0; i < PN -> getNumIncomingValues(); ++i) {
-                    // Invertiamo il predecessore, dove prima era il BB_latch0 che ora non
-                    // e' piu' un blocco sensato nel CFG, con il BB_latch1
-                    if (PN -> getIncomingBlock(i) == BB_latch0) {
-                        PN -> setIncomingBlock(i, BB_latch1);
-                        outs() << "Modificata PHI da latch0 a latch1: " << * PN << "\n";
-                    }
-                }
-            } else {
-                break;
-            }
-        }
+        // Invertiamo il predecessore, dove prima era il BB_latch0 che ora non
+        // e' piu' un blocco sensato nel CFG, con il BB_latch1
+        msg = "Modificata PHI da latch0 a latch1: ";
+        change_phi_incoming(BB_body_start0, BB_latch0, BB_latch1, msg);
 
         outs() << "Latch0 : " << * BB_latch0 << "\n";
         outs() << "Preheader1 : " << * BB_preheader1 << "\n";
@@ -709,39 +698,18 @@ bool fuse_loop(Loop * L0, Loop * L1, ScalarEvolution & SE,
             dyn_cast < BranchInst > (BB_header0 -> getTerminator());
         header_term0 -> setSuccessor(1, BB_exit1);
 
-        for (Instruction & I: * BB_header0) {
-            if (PHINode * PN = dyn_cast < PHINode > ( & I)) {
-                for (unsigned i = 0; i < PN -> getNumIncomingValues(); ++i) {
-                    // Invertiamo il predecessore, dove prima era il BB_latch0 che ora non
-                    // e' piu' un blocco sensato nel CFG, con il BB_latch1
-                    if (PN -> getIncomingBlock(i) == BB_latch0) {
-                        PN -> setIncomingBlock(i, BB_latch1);
-                        outs() << "Modificata PHI da latch0 a latch1: " << * PN << "\n";
-                    }
-                }
-            } else {
-                break;
-            }
-        }
-        for (auto it = BB_header1 -> begin(); it != BB_header1 -> end();) {
-            if (PHINode * PN = dyn_cast < PHINode > ( & * it)) {
-                ++it; // avanza prima di spostare, per non invalidare l'iteratore
+        // Invertiamo il predecessore, dove prima era il BB_latch0 che ora non
+        // e' piu' un blocco sensato nel CFG, con il BB_latch1
+        msg = "Modificata PHI da latch0 a latch1: ";
+        change_phi_incoming(BB_header0, BB_latch0, BB_latch1, msg);
 
-                // Le phi dentro al body del secondo loop devono essere spostate
-                // all'header del primo loop, perche' e' diventato anche l'header del
-                // secondo. Dunque bisogna, oltre che appunto spostarle, cambiare un
-                // predecessore, perche' il primo predecessore non e' piu' il secondo
-                // preheader, ma il primo.
-
-                PN -> setIncomingBlock(0, BB_preheader0);
-                // sposta fisicamente la PHI all'inizio di BB_header0
-                PN -> moveBefore( & * BB_header0 -> getFirstInsertionPt());
-
-                outs() << "Spostata PHI da BB_header1 a BB_header0: " << * PN << "\n";
-            } else {
-                break; // Ricorda: le PHI sono ovviamente tutte all'inizio, se ci sono
-            }
-        }
+        // Le phi dentro al body del secondo loop devono essere spostate
+        // all'header del primo loop, perche' e' diventato anche l'header del
+        // secondo. Dunque bisogna, oltre che appunto spostarle, cambiare un
+        // predecessore, perche' il primo predecessore non e' piu' il secondo
+        // preheader, ma il primo.
+        msg = "Spostata PHI da BB_header1 a BB_header0: ";
+        move_phi(BB_header1, BB_header0, BB_preheader0, msg);
 
         BB_header1 -> dropAllReferences();
         BB_header1 -> eraseFromParent();
