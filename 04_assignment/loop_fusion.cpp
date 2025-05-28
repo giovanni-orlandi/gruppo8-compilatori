@@ -516,14 +516,31 @@ int checkLatchBranchType(BasicBlock * Latch) {
 Primo step della fusion, modifichiamo gli usi della induction variable nel body del loop 2
 con quelli della induction variable del loop 1.
 */
-void update_iv(Loop * L0, Loop * L1, ScalarEvolution & SE) {
-    PHINode * indVar0 = L0 -> getInductionVariable(SE);
-    PHINode * indVar1 = L1 -> getInductionVariable(SE);
-    outs() << "Ind var0 " << * indVar0 << "\n";
-    outs() << "Ind var1 " << * indVar1 << "\n";
-    indVar1 -> replaceAllUsesWith(indVar0);
-    indVar1 -> eraseFromParent();
+void update_iv(Loop *L0, Loop *L1, ScalarEvolution &SE) {
+    PHINode *indVar0 = L0->getInductionVariable(SE);
+    PHINode *indVar1 = L1->getInductionVariable(SE);
+
+    if (!indVar0) {
+        errs() << "Errore: induction variable 0 mancante\n";
+    }
+	if(!indVar1){
+        errs() << "Errore: induction variable 1 mancante\n";
+		
+	}
+    outs() << "Ind var0 " << *indVar0 << "\n";
+    outs() << "Ind var1 " << *indVar1 << "\n";
+
+    // Debug: mostra gli usi
+    for (auto *U : indVar1->users()) {
+        outs() << "Uso di indVar1: " << *U << "\n";
+    }
+
+    indVar1->replaceAllUsesWith(indVar0);
+
+    // Meglio spostare questo alla fine della trasformazione, non qui
+    indVar1->eraseFromParent();
 }
+
 
 void change_phi_incoming(BasicBlock * site, BasicBlock * previous_pred, BasicBlock * new_pred, std::string msg) {
     for (auto it = site -> begin(); it != site -> end();) {
@@ -563,9 +580,6 @@ bool fuse_loop(Loop * L0, Loop * L1, ScalarEvolution & SE,
 
     dumpCFGToDotFile( * F, "dotfile/cfg_loop_NO_MOD.dot");
 
-    // 1. Modifica Induction Variable
-    update_iv(L0, L1, SE);
-
     // Ora ricaviamo tutti i blocchi che ci serviranno dopo per la modifica del cfg
     BasicBlock * BB_latch0 = L0 -> getLoopLatch();
     BasicBlock * BB_preheader0 = L0 -> getLoopPreheader();
@@ -588,6 +602,8 @@ bool fuse_loop(Loop * L0, Loop * L1, ScalarEvolution & SE,
 
     // Caso is_rotated
     if (is_rotated == 1) {
+		update_iv(L0, L1, SE);
+
 
         // Se siamo nel caso di loop ruotati, dobbiamo distinguere i casi con guardia e senza
         if (adj_status == GuardedAdjacent) {
@@ -684,12 +700,13 @@ bool fuse_loop(Loop * L0, Loop * L1, ScalarEvolution & SE,
 
         BB_preheader1 -> dropAllReferences();
         BB_preheader1 -> eraseFromParent();
-    }
+
+	}
 
     // Caso in cui non e' rotated
     else if (is_rotated == 2) {
         BranchInst * body_term0 = dyn_cast < BranchInst > (BB_latch0 -> getTerminator());
-        body_term0 -> setSuccessor(0, BB_latch1);
+        body_term0 -> setSuccessor(0, BB_header1->getTerminator()->getSuccessor(0));
 
         BranchInst * body_term1 = dyn_cast < BranchInst > (BB_latch1 -> getTerminator());
         body_term1 -> setSuccessor(0, BB_header0);
@@ -717,9 +734,17 @@ bool fuse_loop(Loop * L0, Loop * L1, ScalarEvolution & SE,
         BB_preheader1 -> dropAllReferences();
         BB_preheader1 -> eraseFromParent();
 
+		    outs() << "\n\n\n\n\n\n";
+    F->print(outs());
+    outs() << "\n\n\n\n\n\n";
+    dumpCFGToDotFile(*F, "dotfile/A_cfg_loop_MOD.dot");
+
     } else {
         return false;
     }
+
+	// 1. Modifica Induction Variable
+
 
     dumpCFGToDotFile( * F, "dotfile/cfg_loop_MOD.dot");
 
@@ -744,9 +769,9 @@ bool printCheckResult(bool condition,
 Funzione da cui parte l'analisi, chiama le varie funzioni ausiliarie per i task
 e passi dell'algoritmo.
 */
-bool analyze_loop(Function & F, FunctionAnalysisManager & AM, LoopInfo & LI, DominatorTree & DT,
-    PostDominatorTree & PDT, ScalarEvolution & SE,
-    DependenceInfo & DI) {
+bool analyze_loop(Function & F, FunctionAnalysisManager & AM, LoopInfo & LI, DominatorTree & DT, 
+	PostDominatorTree & PDT, ScalarEvolution & SE, DependenceInfo & DI) {
+		
     bool modified_any = false;
     SmallVector < Loop * , 8 > Worklist;
     Loop * L = nullptr;
@@ -770,6 +795,7 @@ bool analyze_loop(Function & F, FunctionAnalysisManager & AM, LoopInfo & LI, Dom
         for (int i = Worklist.size() - 1; i >= 1; --i) {
             Loop * L0 = Worklist[i];
             Loop * L1 = Worklist[i - 1];
+
 
             printSeparator("Check 1: Adiacenza");
             AdjacencyStatus adj_status = are_adjacent(L0, L1);
