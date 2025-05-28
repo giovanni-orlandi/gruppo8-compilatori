@@ -97,49 +97,12 @@ define dso_local i32 @test(i32 noundef %0) #0 {
   br i1 %50, label %32, label %51, !llvm.loop !8
 
 51:                                               ; preds = %47
-  store i32 0, ptr %4, align 4
-  br label %52
-
-52:                                               ; preds = %67, %51
-  %53 = load i32, ptr %4, align 4
-  %54 = load i32, ptr %9, align 4
-  %55 = add nsw i32 %54, %53
-  store i32 %55, ptr %9, align 4
-  %56 = load i32, ptr %4, align 4
-  %57 = add nsw i32 %56, 1
-  store i32 %57, ptr %4, align 4
-  %58 = load i32, ptr %9, align 4
-  %59 = icmp sgt i32 %58, 0
-  br i1 %59, label %60, label %63
-
-60:                                               ; preds = %52
-  %61 = load i32, ptr %5, align 4
-  %62 = add nsw i32 %61, 1
-  store i32 %62, ptr %5, align 4
-  br label %66
-
-63:                                               ; preds = %52
-  %64 = load i32, ptr %5, align 4
-  %65 = add nsw i32 %64, -1
-  store i32 %65, ptr %5, align 4
-  br label %66
-
-66:                                               ; preds = %63, %60
-  br label %67
-
-67:                                               ; preds = %66
-  %68 = load i32, ptr %4, align 4
-  %69 = load i32, ptr %3, align 4
-  %70 = icmp slt i32 %68, %69
-  br i1 %70, label %52, label %71, !llvm.loop !9
-
-71:                                               ; preds = %67
-  %72 = load i32, ptr %6, align 4
-  %73 = call i32 (ptr, ...) @printf(ptr noundef @.str, i32 noundef %72)
-  %74 = load i32, ptr %8, align 4
-  %75 = call i32 (ptr, ...) @printf(ptr noundef @.str.1, i32 noundef %74)
-  %76 = load i32, ptr %2, align 4
-  ret i32 %76
+  %52 = load i32, ptr %6, align 4
+  %53 = call i32 (ptr, ...) @printf(ptr noundef @.str, i32 noundef %52)
+  %54 = load i32, ptr %8, align 4
+  %55 = call i32 (ptr, ...) @printf(ptr noundef @.str.1, i32 noundef %54)
+  %56 = load i32, ptr %2, align 4
+  ret i32 %56
 }
 
 declare i32 @printf(ptr noundef, ...) #1
@@ -165,4 +128,3 @@ attributes #1 = { "frame-pointer"="all" "no-trapping-math"="true" "stack-protect
 !6 = distinct !{!6, !7}
 !7 = !{!"llvm.loop.mustprogress"}
 !8 = distinct !{!8, !7}
-!9 = distinct !{!9, !7}

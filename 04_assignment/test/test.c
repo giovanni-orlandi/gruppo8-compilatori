@@ -64,19 +64,19 @@ int test(int n){
         }
     } while(i < n);
     // }
-    i = 0;
-    do {
-        x +=i;
-        i++;
+    // i = 0;
+    // do {
+    //     x +=i;
+    //     i++;
             
-        if(x > 0){
-            a++;
-        }
-        else{
-            a--;
-        }
+    //     if(x > 0){
+    //         a++;
+    //     }
+    //     else{
+    //         a--;
+    //     }
 
-    } while(i < n);
+    // } while(i < n);
 
     printf("Somma: %d\n", somma);
     printf("Prodotto: %d\n", prodotto);

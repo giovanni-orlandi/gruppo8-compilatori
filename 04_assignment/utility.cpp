@@ -46,3 +46,9 @@ void printSeparator(StringRef label="", unsigned width = 60) {
   }
   outs().resetColor();
 }
+
+
+    // outs() << "\n\n\n\n\n\n";
+    // F->print(outs());
+    // outs() << "\n\n\n\n\n\n";
+    // dumpCFGToDotFile(*F, "dotfile/A_cfg_loop_MOD.dot");
