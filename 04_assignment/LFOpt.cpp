@@ -25,21 +25,19 @@ struct LFOpt : PassInfoMixin<LFOpt> {
   bool modified = false;
 
   PreservedAnalyses run(Function &F, FunctionAnalysisManager &AM) {
-    LoopInfo &LI = AM.getResult<LoopAnalysis>(F);
 
-    DominatorTree &DT = AM.getResult<DominatorTreeAnalysis>(F);
-    PostDominatorTree &PDT = AM.getResult<PostDominatorTreeAnalysis>(F);
+      LoopInfo &LI = AM.getResult<LoopAnalysis>(F);
 
-    ScalarEvolution &SE = AM.getResult<ScalarEvolutionAnalysis>(F);
-    DependenceInfo &DI = AM.getResult<DependenceAnalysis>(F);
-
-    // dumpCFGToDotFile(F, "./dotfile/cfg_loop_fusion10.dot");
-    // try{
-      modified = analyze_loop(F, AM, LI, DT, PDT, SE, DI);
-    // }
-    // catch(...){
-    //   outs() << "Errore durante l'ottimizzazione!\n";
-    // }
+      DominatorTree &DT = AM.getResult<DominatorTreeAnalysis>(F);
+      PostDominatorTree &PDT = AM.getResult<PostDominatorTreeAnalysis>(F);
+      ScalarEvolution & SE = AM.getResult < ScalarEvolutionAnalysis > (F);
+      DependenceInfo & DI = AM.getResult < DependenceAnalysis > (F);
+      try{
+        modified = analyze_loop(F, AM, LI, DT, PDT, SE, DI);
+    }
+    catch(...){
+      outs() << "Errore durante l'ottimizzazione!\n";
+    }
 
     return modified ? PreservedAnalyses::none() : PreservedAnalyses::all();
     

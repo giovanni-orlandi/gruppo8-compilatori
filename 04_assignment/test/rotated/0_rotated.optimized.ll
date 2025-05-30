@@ -5,22 +5,23 @@ target triple = "x86_64-pc-linux-gnu"
 
 @.str = private unnamed_addr constant [11 x i8] c"Somma: %d\0A\00", align 1
 @.str.1 = private unnamed_addr constant [14 x i8] c"Prodotto: %d\0A\00", align 1
+@.str.2 = private unnamed_addr constant [7 x i8] c"a: %d\0A\00", align 1
 
 ; Function Attrs: noinline nounwind uwtable
 define dso_local i32 @test(i32 noundef %0) #0 {
   br label %2
 
 2:                                                ; preds = %8, %1
+  %.03 = phi i32 [ 0, %1 ], [ %3, %8 ]
   %.02 = phi i32 [ 0, %1 ], [ %4, %8 ]
-  %.01 = phi i32 [ 0, %1 ], [ %3, %8 ]
-  %.0 = phi i32 [ 1, %1 ], [ %7, %8 ]
-  %3 = add nsw i32 %.01, %.02
+  %.01 = phi i32 [ 1, %1 ], [ %7, %8 ]
+  %3 = add nsw i32 %.03, %.02
   %4 = add nsw i32 %.02, 1
   br label %5
 
 5:                                                ; preds = %2
   %6 = add nsw i32 %.02, 1
-  %7 = mul nsw i32 %.0, %6
+  %7 = mul nsw i32 %.01, %6
   br label %8
 
 8:                                                ; preds = %5
@@ -28,8 +29,23 @@ define dso_local i32 @test(i32 noundef %0) #0 {
   br i1 %9, label %2, label %10, !llvm.loop !6
 
 10:                                               ; preds = %8
-  %11 = call i32 (ptr, ...) @printf(ptr noundef @.str, i32 noundef %3)
-  %12 = call i32 (ptr, ...) @printf(ptr noundef @.str.1, i32 noundef %7)
+  br label %11
+
+11:                                               ; preds = %14, %10
+  %.2 = phi i32 [ 0, %10 ], [ %12, %14 ]
+  %.0 = phi i32 [ 0, %10 ], [ %13, %14 ]
+  %12 = add nsw i32 %.2, 1
+  %13 = sub nsw i32 %.0, %12
+  br label %14
+
+14:                                               ; preds = %11
+  %15 = icmp slt i32 %12, %0
+  br i1 %15, label %11, label %16, !llvm.loop !8
+
+16:                                               ; preds = %14
+  %17 = call i32 (ptr, ...) @printf(ptr noundef @.str, i32 noundef %3)
+  %18 = call i32 (ptr, ...) @printf(ptr noundef @.str.1, i32 noundef %7)
+  %19 = call i32 (ptr, ...) @printf(ptr noundef @.str.2, i32 noundef %13)
   ret i32 undef
 }
 
@@ -55,3 +71,4 @@ attributes #1 = { "frame-pointer"="all" "no-trapping-math"="true" "stack-protect
 !5 = !{!"Ubuntu clang version 19.1.1 (1ubuntu1~24.04.2)"}
 !6 = distinct !{!6, !7}
 !7 = !{!"llvm.loop.mustprogress"}
+!8 = distinct !{!8, !7}
