@@ -61,31 +61,12 @@ define dso_local void @test(i32 noundef %0) #0 {
   br label %20, !llvm.loop !8
 
 30:                                               ; preds = %20
-  br label %31
-
-31:                                               ; preds = %35, %30
-  %32 = load i32, ptr %5, align 4
-  %33 = load i32, ptr %2, align 4
-  %34 = icmp slt i32 %32, %33
-  br i1 %34, label %35, label %41
-
-35:                                               ; preds = %31
-  %36 = load i32, ptr %5, align 4
-  %37 = add nsw i32 %36, 1
-  store i32 %37, ptr %5, align 4
-  %38 = load i32, ptr %5, align 4
-  %39 = load i32, ptr %8, align 4
-  %40 = sub nsw i32 %39, %38
-  store i32 %40, ptr %8, align 4
-  br label %31, !llvm.loop !9
-
-41:                                               ; preds = %31
-  %42 = load i32, ptr %6, align 4
-  %43 = call i32 (ptr, ...) @printf(ptr noundef @.str, i32 noundef %42)
-  %44 = load i32, ptr %7, align 4
-  %45 = call i32 (ptr, ...) @printf(ptr noundef @.str.1, i32 noundef %44)
-  %46 = load i32, ptr %8, align 4
-  %47 = call i32 (ptr, ...) @printf(ptr noundef @.str.2, i32 noundef %46)
+  %31 = load i32, ptr %6, align 4
+  %32 = call i32 (ptr, ...) @printf(ptr noundef @.str, i32 noundef %31)
+  %33 = load i32, ptr %7, align 4
+  %34 = call i32 (ptr, ...) @printf(ptr noundef @.str.1, i32 noundef %33)
+  %35 = load i32, ptr %8, align 4
+  %36 = call i32 (ptr, ...) @printf(ptr noundef @.str.2, i32 noundef %35)
   ret void
 }
 
@@ -112,4 +93,3 @@ attributes #1 = { "frame-pointer"="all" "no-trapping-math"="true" "stack-protect
 !6 = distinct !{!6, !7}
 !7 = !{!"llvm.loop.mustprogress"}
 !8 = distinct !{!8, !7}
-!9 = distinct !{!9, !7}

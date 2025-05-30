@@ -12,48 +12,34 @@ define dso_local void @test(i32 noundef %0) #0 {
   br label %2
 
 2:                                                ; preds = %4, %1
-  %.04 = phi i32 [ 0, %1 ], [ %6, %4 ]
+  %.03 = phi i32 [ 0, %1 ], [ %6, %4 ]
   %.01 = phi i32 [ 0, %1 ], [ %5, %4 ]
   %3 = icmp slt i32 %.01, %0
   br i1 %3, label %4, label %7
 
 4:                                                ; preds = %2
   %5 = add nsw i32 %.01, 1
-  %6 = add nsw i32 %.04, %5
+  %6 = add nsw i32 %.03, %5
   br label %2, !llvm.loop !6
 
 7:                                                ; preds = %2
   br label %8
 
 8:                                                ; preds = %10, %7
-  %.05 = phi i32 [ 1, %7 ], [ %12, %10 ]
   %.02 = phi i32 [ 0, %7 ], [ %11, %10 ]
+  %.0 = phi i32 [ 1, %7 ], [ %12, %10 ]
   %9 = icmp slt i32 %.02, %0
   br i1 %9, label %10, label %13
 
 10:                                               ; preds = %8
   %11 = add nsw i32 %.02, 1
-  %12 = mul nsw i32 %.05, %11
+  %12 = mul nsw i32 %.0, %11
   br label %8, !llvm.loop !8
 
 13:                                               ; preds = %8
-  br label %14
-
-14:                                               ; preds = %16, %13
-  %.03 = phi i32 [ 0, %13 ], [ %17, %16 ]
-  %.0 = phi i32 [ 0, %13 ], [ %18, %16 ]
-  %15 = icmp slt i32 %.03, %0
-  br i1 %15, label %16, label %19
-
-16:                                               ; preds = %14
-  %17 = add nsw i32 %.03, 1
-  %18 = sub nsw i32 %.0, %17
-  br label %14, !llvm.loop !9
-
-19:                                               ; preds = %14
-  %20 = call i32 (ptr, ...) @printf(ptr noundef @.str, i32 noundef %.04)
-  %21 = call i32 (ptr, ...) @printf(ptr noundef @.str.1, i32 noundef %.05)
-  %22 = call i32 (ptr, ...) @printf(ptr noundef @.str.2, i32 noundef %.0)
+  %14 = call i32 (ptr, ...) @printf(ptr noundef @.str, i32 noundef %.03)
+  %15 = call i32 (ptr, ...) @printf(ptr noundef @.str.1, i32 noundef %.0)
+  %16 = call i32 (ptr, ...) @printf(ptr noundef @.str.2, i32 noundef 0)
   ret void
 }
 
@@ -80,4 +66,3 @@ attributes #1 = { "frame-pointer"="all" "no-trapping-math"="true" "stack-protect
 !6 = distinct !{!6, !7}
 !7 = !{!"llvm.loop.mustprogress"}
 !8 = distinct !{!8, !7}
-!9 = distinct !{!9, !7}

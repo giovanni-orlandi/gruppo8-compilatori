@@ -18,10 +18,10 @@ void test(int n){
     prodotto *= j;
     };
 
-    while(z < n){
-        z++;
-        gugu -= z;
-    };
+    // while(z < n){
+    //     z++;
+    //     gugu -= z;
+    // };
 
     printf("Somma: %d\n", somma);
     printf("Prodotto: %d\n", prodotto);

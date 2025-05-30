@@ -490,6 +490,13 @@ bool no_negative_dependencies(Loop * L0, Loop * L1, DependenceInfo & DI,
 
 // =========================== FUSION effettiva ===============================
 
+/*
+Con questo controlliamo in che caso siamo, se ruotato o meno. 
+Dato il BB di un latch, se la sua branch instruction e' condizionale vuol dire che siamo nel caso ruotato,
+altrimenti nel caso non ruotato.
+NOTA: forse c'erano altri metodi piu' eleganti, abbiamo constatato che questo sia comunque significativo.
+
+*/
 int checkLatchBranchType(BasicBlock * Latch) {
     if (!Latch) {
         errs() << "Loop has no latch!\n";
@@ -515,6 +522,7 @@ int checkLatchBranchType(BasicBlock * Latch) {
 /*
 Primo step della fusion, modifichiamo gli usi della induction variable nel body del loop 2
 con quelli della induction variable del loop 1.
+NOTA: usiamo solo nel caso di loops rotated.
 */
 void update_iv(Loop * L0, Loop * L1, ScalarEvolution & SE) {
     PHINode * indVar0 = L0 -> getInductionVariable(SE);
@@ -541,6 +549,9 @@ void update_iv(Loop * L0, Loop * L1, ScalarEvolution & SE) {
     indVar1 -> eraseFromParent();
 }
 
+/*
+Modifica tutte le phi contenute nel BB site, cambiandogli il predecessore previous_pred con new_pred
+*/
 void change_phi_incoming(BasicBlock * site, BasicBlock * previous_pred, BasicBlock * new_pred, std::string msg) {
     for (auto it = site -> begin(); it != site -> end();) {
         if (PHINode * PN = dyn_cast < PHINode > ( & * it)) {
@@ -557,6 +568,9 @@ void change_phi_incoming(BasicBlock * site, BasicBlock * previous_pred, BasicBlo
     }
 }
 
+/*
+Sposta le phi dal BB from al BB to e gli mette come predecessore il BB pred
+*/
 void move_phi(BasicBlock * from, BasicBlock * to, BasicBlock * pred, std::string msg) {
     for (auto it = from -> begin(); it != from -> end();) {
         if (PHINode * PN = dyn_cast < PHINode > ( & * it)) {
@@ -572,6 +586,16 @@ void move_phi(BasicBlock * from, BasicBlock * to, BasicBlock * pred, std::string
     }
 }
 
+/*
+Funzione che si occupa di fondere loop di varie complessati, ovviamente dopo che hanno passato tutti
+i controlli precedenti. 
+Il workflow e' il seguente:
+
+- Ricaviamo tutti i BB che ci interessanno e poi agiamo in maniera differente a seconda del tipo di loop
+    + rotated -> aggiorniamo subito la IV e poi, visto che potrebbe esserci la guardia, la gestiamo se presente
+                 Una volta che ci siamo ricondotti ad un caso "standard", procediamo con la fusion
+    + non rotated -> 
+                 */  
 bool fuse_loop(Loop * L0, Loop * L1, ScalarEvolution & SE,
     AdjacencyStatus adj_status) {
     std::string msg = "";
@@ -640,7 +664,7 @@ bool fuse_loop(Loop * L0, Loop * L1, ScalarEvolution & SE,
             BasicBlock * BB_pred_guard1 = * pred_begin(BB_guard1);
             outs() << "BB prima di guard1: " << * BB_pred_guard1 << "\n";
             outs() << "BB guard1: " << * BB_guard1 << "\n";
-
+            
             BranchInst * latch_term0 = dyn_cast < BranchInst > (BB_latch0 -> getTerminator());
             latch_term0 -> setSuccessor(1, guard_term1 -> getSuccessor(0));
 
@@ -652,7 +676,9 @@ bool fuse_loop(Loop * L0, Loop * L1, ScalarEvolution & SE,
         }
 
         // In ogni caso (guarded o meno), ora entriamo nel merito della trasformazione
-
+        
+        // Essendo che il corpo puo' essere complesso e formato da piu' blocchi, ci prendiamo
+        // l'inizio e la fine dei due body (nota: potrebbero coincidere)
         BasicBlock * BB_body_start0 = L0 -> getHeader();
         BasicBlock * BB_body_end0 = * pred_begin(BB_latch0);
 
@@ -674,18 +700,17 @@ bool fuse_loop(Loop * L0, Loop * L1, ScalarEvolution & SE,
 
         // Ora bisogna gestire le phi, che devono cambiare
         // Ci occupiamo prima di quelle nel secondo body
-        // Le phi dentro al body del secondo loop devono essere spostate
-        // all'header del primo loop, perche' e' diventato anche l'header del
-        // secondo. Dunque bisogna, oltre che appunto spostarle, cambiare un
-        // predecessore, perche' il primo predecessore non e' piu' il secondo
-        // preheader, ma il primo.
+        // Le phi all'inizio del body del secondo loop devono essere spostate
+        // all'inzio del body del primo loop.
+        // Bisogna anche cambiare un predecessore, perche' il primo predecessore non e' 
+        // piu' il secondo preheader, ma il primo.
         msg = "Spostata PHI da BB_body_start1 a BB_body_start0: ";
         move_phi(BB_body_start1, BB_body_start0, BB_preheader0, msg);
 
-        // Ora ci occupiamo di quelle nel primo header, il cui predecessore deve
+        // Ora ci occupiamo di quelle all'inzio del primo body, il cui predecessore deve
         // cambiare
-        // Invertiamo il predecessore, dove prima era il BB_latch0 che ora non
-        // e' piu' un blocco sensato nel CFG, con il BB_latch1
+        // Invertiamo il predecessore, dove prima era il BB_latch0 (che ora non
+        // e' piu' un blocco sensato nel CFG) con il BB_latch1
         msg = "Modificata PHI da latch0 a latch1: ";
         change_phi_incoming(BB_body_start0, BB_latch0, BB_latch1, msg);
 
@@ -703,6 +728,7 @@ bool fuse_loop(Loop * L0, Loop * L1, ScalarEvolution & SE,
 
     // Caso in cui non e' rotated
     else if (is_rotated == 2) {
+        // Il latch0 non deve piu' semplicemente tornare indietro, ma andare all'inizio del secondo body
         BranchInst * body_term0 = dyn_cast < BranchInst > (BB_latch0 -> getTerminator());
         body_term0 -> setSuccessor(0, BB_header1 -> getTerminator() -> getSuccessor(0));
 
@@ -714,11 +740,11 @@ bool fuse_loop(Loop * L0, Loop * L1, ScalarEvolution & SE,
         header_term0 -> setSuccessor(1, BB_exit1);
 
         // Invertiamo il predecessore, dove prima era il BB_latch0 che ora non
-        // e' piu' un blocco sensato nel CFG, con il BB_latch1
+        // sara' mai predecessore di BB_header0, con il BB_latch1
         msg = "Modificata PHI da latch0 a latch1: ";
         change_phi_incoming(BB_header0, BB_latch0, BB_latch1, msg);
 
-        // Le phi dentro al body del secondo loop devono essere spostate
+        // Le phi dentro all'header del secondo loop devono essere spostate
         // all'header del primo loop, perche' e' diventato anche l'header del
         // secondo. Dunque bisogna, oltre che appunto spostarle, cambiare un
         // predecessore, perche' il primo predecessore non e' piu' il secondo
@@ -740,8 +766,6 @@ bool fuse_loop(Loop * L0, Loop * L1, ScalarEvolution & SE,
     } else {
         return false;
     }
-
-    // 1. Modifica Induction Variable
 
     dumpCFGToDotFile( * F, "dotfile/cfg_loop_MOD.dot");
 
