@@ -62,9 +62,9 @@ bool match_op(Instruction* I_main, Value* op_full, Instruction* I_srot) {
     }
     float offset_full = static_cast<float>(C_full->getSExtValue());
 
-    // Come fatto per l'istruzione srotolata, se l'istruzione originale che stiamo valutando e' una sottrazione invertiamo il segno dell'offset
+    // Come faremo dopo per l'istruzione srotolata, se l'istruzione originale che stiamo valutando e' una sottrazione invertiamo il segno dell'offset
     if (main_opcode == Instruction::Sub) offset_full = -offset_full;
-    // Come fatto per l'istruzione srotolata, se l'istruzione originale che stiamo valutando e' una divisione invertiamo l'offset
+    // Come faremo dopo per l'istruzione srotolata, se l'istruzione originale che stiamo valutando e' una divisione invertiamo l'offset
     if (main_opcode == Instruction::SDiv) offset_full = 1.0 / offset_full;
 
 
@@ -137,8 +137,8 @@ bool match_op(Instruction* I_main, Value* op_full, Instruction* I_srot) {
 
 /*
     Funzione che fa partire la logica specifica per l'ottimizzazione.
-    Ritorna true se l'ottimizzazione è possibile e viene applicata, cambiando i riferimenti e slinkando operazioni inutili 
-    (WIP: ELIMINAZIONE), altrimenti false.
+    Ritorna true se l'ottimizzazione è possibile e viene applicata, cambiando i riferimenti e 
+    slinkando operazioni inutili , altrimenti false.
 */
 bool multi_inst_opt(Instruction& I) {
 
