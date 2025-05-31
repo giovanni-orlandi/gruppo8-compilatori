@@ -1,6 +1,6 @@
 ### File principali
 
-- [`LocalOpts.cpp`](https://github.com/giovanni-orlandi/gruppo8-compilatori/blob/main/03_assignment/CMLIOpt.cpp)  
+- [`CMLIOpt.cpp`](https://github.com/giovanni-orlandi/gruppo8-compilatori/blob/main/03_assignment/CMLIOpt.cpp)  
   Plugin LLVM che registra e gestisce il passo di ottimizzazione.
 
 - [`loop_invariant.cpp`](https://github.com/giovanni-orlandi/gruppo8-compilatori/blob/main/03_assignment/loop_invariant.cpp)  
@@ -13,8 +13,6 @@ Contiene file `.ll` e `.c` utilizzati per testare l'ottimizzazione, con diversi 
 ---
 
 ### Uso e comandi
-
-Ogni ottimizzazione è invocabile singolarmente.  
 
 (**NOTA**: per partire da un file `.c` si rimanda alla sezione *COME GENERARE ESEMPI A PARTIRE DA FILE .c* sul README generale del repository)
 

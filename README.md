@@ -42,3 +42,13 @@ Si rimanda alla documentazione dentro la cartella:
 [`README.md`](https://github.com/giovanni-orlandi/gruppo8-compilatori/blob/main/03_assignment/README.md)
 
 ---
+
+## Cartella: `04_assignment`
+
+Questa cartella contiene il codice relativo al terzi assignment.
+
+Si rimanda alla documentazione dentro la cartella: 
+[`README.md`](https://github.com/giovanni-orlandi/gruppo8-compilatori/blob/main/04_assignment/README.md)
+
+
+---
