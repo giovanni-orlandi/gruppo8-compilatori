@@ -13,7 +13,7 @@ void test_arrays(int n){
         a += arr1[i+1];
     }   
 
-    printf("EHIIIII: %d\n", a);
+    printf("Valore di a: %d\n", a);
 
 }
 
