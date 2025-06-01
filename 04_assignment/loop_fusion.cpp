@@ -594,7 +594,7 @@ Il workflow e' il seguente:
 - Ricaviamo tutti i BB che ci interessanno e poi agiamo in maniera differente a seconda del tipo di loop
     + rotated -> aggiorniamo subito la IV e poi, visto che potrebbe esserci la guardia, la gestiamo se presente
                  Una volta che ci siamo ricondotti ad un caso "standard", procediamo con la fusion
-    + non rotated -> 
+    + non rotated -> spiegato dopo
                  */  
 bool fuse_loop(Loop * L0, Loop * L1, ScalarEvolution & SE,
     AdjacencyStatus adj_status) {
