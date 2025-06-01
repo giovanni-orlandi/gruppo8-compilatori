@@ -587,7 +587,7 @@ void move_phi(BasicBlock * from, BasicBlock * to, BasicBlock * pred, std::string
 }
 
 /*
-Funzione che si occupa di fondere loop di varie complessati, ovviamente dopo che hanno passato tutti
+Funzione che si occupa di fondere loop di varie complessita', ovviamente dopo che hanno passato tutti
 i controlli precedenti. 
 Il workflow e' il seguente:
 
